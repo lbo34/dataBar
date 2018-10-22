@@ -25,9 +25,9 @@ The chapter starts with and example of cell segmentation on microscope images.
 
 **Data Tranformation**
 
-**Data centering and scaling** that allows all predictors to share a uniform scale. The authors note that this improves the stability of calculations. The next step is related to skewness in data. Skewness can be corrected by applying mathematical transformations such as log and square root. One interesting function to correct skewness in predictors is the **Box-Cox tranformation**. This transformation as one parameter λ. Through this parameter, it is possible to switch from square transformation (λ = 2), square root transformation (λ = 0.5), log transformation(λ = 0), inverse transformation (λ = -1). One nice aspect is that some implementations of the Box-Cox model allow to determine the "best" λ value for each predictor.
+**Data centering and scaling** that allows all predictors to share a uniform scale. The authors note that this improves the stability of calculations. The next step is related to skewness in data. Skewness can be corrected by applying mathematical transformations such as log and square root. One interesting function to correct skewness in predictors is the **Box-Cox tranformation**. This transformation has one parameter λ. Through this parameter, it is possible to switch from square transformation (λ = 2), square root transformation (λ = 0.5), log transformation(λ = 0), inverse transformation (λ = -1). One nice aspect is that some implementations of the Box-Cox model allow to determine the "best" λ value for each predictor.
 
-Predictors transformation can also be applied to a **set of predictors rather than individual predictors** and the book defines two aspects: resolving **outliers** on the one side and **data reduction and feature extraction** on the other side. As outliers may correspond to valid part of data (like a different cluster of data), some treatments allow to "regularize" them as some modeling techniques are sensitive to their presence. One example of such treatment is the spatial sign treatment which allows to project all data points on the surface of a multidimensional sphere. An example of this transformtion is shown in the figure below.
+Predictors transformation can also be applied to a **set of predictors rather than individual predictors** and the book defines two aspects: resolving **outliers** on the one side and **data reduction and feature extraction** on the other side. As outliers may correspond to valid part of data (like a different cluster of data), some treatments allow to "regularize" them as some modeling techniques are sensitive to their presence. One example of such treatment is the spatial sign treatment which allows to project all data points on the surface of a multidimensional sphere. An example of this transformation is shown in the figure below.
 
 <img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/spatial sign treatment.png" alt="Spation sign transformation" width="400px"/>
 
@@ -62,7 +62,7 @@ Another reason to remove predictors or to remove the amount of predictors is rel
 
 **Adding Predictors**
 
-Addition of predictors can be usefull in cases such as the coding of a categorical variable into "dummy variables" (It seems to correspond to what is sometime referred to as "One Hot Encoding"). In such cases a categorical variables that can take 3 value is replaced by 2 variables coded between 0 and 1. The 3rd values corresponds to the two variables being equal to 0.
+Addition of predictors can be useful in cases such as the coding of a categorical variable into "dummy variables" (It seems to correspond to what is sometimes referred to as "One-Hot-Encoding"). In such cases a categorical variable that can take 3 values is replaced by 2 variables coded between 0 and 1. The 3rd value corresponds to the two variables being equal to 0.
 
 
 **Binning Predictors**
