@@ -1,5 +1,5 @@
 ---
-title: 'Reading Notes Series: Applied Predictive Modeling - Section 3 '
+title: Reading Notes Series: Applied Predictive Modeling - Section 3
 author: Laurent Barcelo
 date: '2018-10-22'
 slug: reading-notes-series-applied-predictive-modeling-section-3
@@ -9,8 +9,6 @@ tags:
   - data pre-processing
   - Reading Notes
   - Books
-description: ''
-featured_image: ''
 ---
 
 This is the first series of reading notes of the DataBarBlog!
