@@ -4,7 +4,7 @@ author: Laurent Barcelo
 date: '2018-10-22'
 slug: reading-notes-series-applied-predictive-modeling-section-3
 categories:
-  - Reading Notes
+  - Posts
 tags:
   - data pre-processing
   - Reading Notes
