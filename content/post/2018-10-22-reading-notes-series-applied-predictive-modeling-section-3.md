@@ -1,5 +1,5 @@
 ---
-title: Reading Notes Series - Applied Predictive Modeling - Section 3
+title: Reading Notes Series - Applied Predictive Modeling - Section 3 (data pre-processing)
 author: Laurent Barcelo
 date: '2018-10-22'
 slug: reading-notes-series-applied-predictive-modeling-section-3
