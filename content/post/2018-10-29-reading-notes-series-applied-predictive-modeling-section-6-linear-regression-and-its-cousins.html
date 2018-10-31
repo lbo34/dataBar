@@ -1,0 +1,146 @@
+---
+title: Reading Notes Series - Applied Predictive Modeling - Section 6 (Linear Regression
+  and its cousins) - PART 1
+author: Laurent Barcelo
+date: '2018-10-29'
+slug: reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins
+categories:
+  - Reading Notes
+tags:
+  - regression
+description: ''
+featured_image: ''
+---
+
+
+
+<p>This first series is related to M. Kuhn and K. Johnson book “Applied Predictive Modeling”. The book pdf is available <a href="https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf">here</a>, but if, like me, you prefer to have a paper copy of the book, you can purchase it <a href="https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&amp;qid=1540208647&amp;sr=8-1&amp;keywords=applied+predictive+modeling">here</a>. <strong>This post is dedicated to section 6 on linear regression and its cousins.</strong></p>
+<p><img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/></p>
+<p>As a data analysis practitioner for many years, before reading this chapter of the book, I thought I knew a little bit about linear regression. Well…After going through the chapter, I realize that I didn’t know that much, or at least that I know much more now! So, for me, this chapter is again a MUST READ.</p>
+<p>Linear regression models can be written in the form:</p>
+<p><span class="math display">\[Yi = b_0 + (\sum_{j=1}^{p} b_{ij}.X_{ij}) + e_i\]</span></p>
+<p>This chapter of the book covers:</p>
+<ul>
+<li><strong>Ordinary Linear regression</strong>;</li>
+<li><strong>Partial Least Square (PLS)</strong> regression and <strong>Principal Components Regression (PCR)</strong>;</li>
+<li>Penalized models such as <strong>ridge regression</strong>, <strong>lasso</strong> and <strong>elastic net</strong>.</li>
+</ul>
+<p>The difference between these regression models is first explained with the bias-variance tradeoff (see chapter <a href="https://www.lbo34.com/post/reading-notes-series-applied-predictive-modeling-section-5-measuring-performance-in-regression-models/">5</a>). Ordinary Linear regression leads to models that have minimum bias (but can be high variance) while the penalized models have a higher bias but can have a lower variance. In some cases, the in spite of a higher bias, because of a lower variance, these penalized model can have a lower RMSE.</p>
+<p>One key advantage of linear models that can be written in the form of the above equation is that they are <strong>easily interpretable</strong>. Another one is that it is easy to compute statistics such as the <strong>standard error of the coefficients</strong>, as long as some assumptions are met about the distribution of the models residuals. Therefore, these models are useful for <strong>inference</strong>.</p>
+<p>However, a general drawback of these models is their <strong>linear nature</strong> which means that the solution is in the form of an hyperplane. However models can be augmented with <strong>quadratic</strong>, <strong>cubic</strong> or <strong>interaction terms</strong>. Non linear behaviors could be better modeled with other types of models.</p>
+<p><strong>The case study dataset</strong></p>
+<p>The chapter starts with a case study that will be used to illustrate the different regression techniques. The purpose is to model the solubility of a compound from a series of descriptors of its chemical structure. The data is stored in the <code>AppliedPredictiveModeling</code> package. The dataset is composed on 1,267 compounds. The descriptors can be grouped in 3 categories:</p>
+<ul>
+<li>countinuous descriptors (such as the molecular mass). There are 4 of them;</li>
+<li>count descriptors (such as the number of bonds). There are 16 of them;</li>
+<li>binary decriptors (that indicate the presence or absence of a specific feature). There are 208 of them.</li>
+</ul>
+<p>The relationship between the solubility (measured on a <span class="math inline">\(log_{10}\)</span> scale) and the the molecular mass is given in the following scatterplot.
+<img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>Concerning the dataset, the authors note that:</p>
+<ul>
+<li>Although, overall, the descriptors are not strongly correlated, some of them have correlations greater than 0.90. <strong>This redundancy in information is likely to have some impact on the modeling</strong>.</li>
+<li>The count predictors are generally right skewed.</li>
+</ul>
+<p>For the modeling, the data has been randomly split into a training dataset (n = 951) and a test dataset (n = 316). To tune the models, 10-fold cross-validation will be performed on the training dataset. The performance of the final model will be assessed on the test dataset. In addition, a Box-Cox transformation is applied on the 4 continuous predictors.</p>
+<p>The relationships between the count and continuous variables and the solubility can be “screened” graphically using the <code>caret::featurePlot()</code> function and a correlation matrix using the <code>corrplot</code> package (with the “hclust” ordering as seen in previous <a href="https://www.lbo34.com/post/reading-notes-series-applied-predictive-modeling-section-3/">chapters</a>:</p>
+<pre class="r"><code>suppressMessages(library(caret))
+notFingerprints &lt;- grep(&quot;FP&quot;, names(solTrainXtrans))
+
+featurePlot(solTrainXtrans[, -notFingerprints],
+            solTrainY,
+            type = c(&quot;g&quot;, &quot;p&quot;, &quot;smooth&quot;),
+            labels = rep(&quot;&quot;, 2))</code></pre>
+<p><img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code>suppressMessages(library(corrplot))
+
+corrplot(cor(solTrainXtrans[, -notFingerprints]), 
+         order = &quot;hclust&quot;, 
+         tl.cex = .8)</code></pre>
+<p><img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+<p>In addition, the authors perform a Principal Componenents Analysis to check the correlation between the predictor variables.</p>
+<pre class="r"><code>suppressMessages(library(factoextra))
+solXtrans &lt;- rbind(solTrainXtrans, solTestXtrans)
+pca_all &lt;- prcomp(solXtrans, center = TRUE, scale. = TRUE) 
+# Important to scale data.
+fviz_screeplot(pca_all, ncp = 30)</code></pre>
+<p><img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>From these initial checks the authors conclude that the data is contained in a much smaller number of dimensions than the number of predictors because of collinearities. Also, some predictors exhibit strong correlations, which could create problems in the development of models if no pre-processing is performed.</p>
+<p><strong>Linear Regression</strong></p>
+<p>The objective of linear regression is to find the plane (hyperplane in multidimensions, line in 2D) that minimuzes the sum of square of the errors (SSE) :</p>
+<p><span class="math display">\[SSE = \sum_{i=1}^{n} (\hat{Y_i} - Y_i)^2 \]</span></p>
+<p>This plane can be determined analytically and a vector of coefficients is given by:</p>
+<p><span class="math display">\[(X^T.X)^{-1}.X^T.y\]</span></p>
+<p>As we make some assumptions on the residuals, this solution is also the one that minimizes the bias in bias-variance tradeoff..</p>
+<p>Linear regression has some <strong>drawbacks</strong>:</p>
+<ol style="list-style-type: decimal">
+<li>The <span class="math inline">\((X^T.X)\)</span> can be inversed only if the number of samples is larger than the number of predictors (also when performing cross validation…) and if one predictor cannot be determined by a linear combination of the others. If colinearity exists, strategies to remove predictors with high pairwise correlation can be used or the computation of the Variance Inflation Factor can help with the above conditions.</li>
+</ol>
+<p>If it is not enough and the number of predictors still outnumbers the sample size, several strategies are poosible:</p>
+<ul>
+<li>PCA can be used as pre-processing;</li>
+<li>Partial Least Square (PLS) which allows simultaneous dimension reduction and regression;</li>
+<li>Other techniques such as ridge regression, the lasso or the elastic net that shrinks the parameter estimates.</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li><p>The linear nature of the relationship. Some parameters such as quadratic, cubic, interaction terms can be added to alleviate some of this problem… However, if the number of predictors is large initially, this may be unpractical. So if there is obviously a non linear relationship, other modeling technqiues may be more suitable.</p></li>
+<li><p>The linear regression gives a lot of weight to observations that are far away from the general trend (called <em>influential</em>). This is due to the minimization of the SSE. In order to reduce this effect, other metrics than SSE can be used:</p></li>
+</ol>
+<ul>
+<li>use the sum of absolute errors <span class="math inline">\(\sum_{i=1}^{n} |\hat{Y_i} - Y_i|\)</span>;</li>
+<li>use the Huber function (square of errors for small errors and absolute error for larger ones)</li>
+</ul>
+<p>Although there is not tuning parameter for linear regression, we still have to perform cross-validation or equivalent.</p>
+<p>In order to illustrate the effect of colinearity on regression coefficients, the authors have performed regressions between the solubility variable and two highly correlated variables (<code>NumNonHAtoms</code> and <code>NumNonHBonds</code>, r = 0.994) in different contexts:</p>
+<ol style="list-style-type: decimal">
+<li><code>NumNonHAtoms</code> alone;</li>
+<li><code>NumNonHBonds</code> alone;</li>
+<li>both variables;</li>
+<li>both variables and all other predictors.</li>
+</ol>
+<p>The results are summarized in the table below.</p>
+<div class="figure">
+<img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/Regression%20coefficients%20with%20colinearity.png" alt="Effect of colinearity on regression coefficients" width="400" />
+<p class="caption">Effect of colinearity on regression coefficients</p>
+</div>
+<p>As they have a very high correlation, when taken individually, the coefficients for the two variables are similar with a similar standard error. When we introduce both variables, as they are highly correlated, (1) the coefficient of one of them is signficantly reduced and (2) the standard error increases by a large amount. This effect is even stronger when all variables are instroduced in the model and there is additional colinearity in the dataset.</p>
+<p>In order to apply the linear regression to the training dataset:</p>
+<ol style="list-style-type: decimal">
+<li>We start from the <code>solTrainXtrans</code> data that has gone through a Box-Cox transformation for the continuous variable</li>
+<li>We apply the <code>caret::findCorrelation()</code> function to find and eliminate variables with too high pairwise correlation with a cutoff value of 0.9. This removes 38 variables.</li>
+<li>We use the <code>caret::train()</code> function with arguments to perform a 10-folds cross-validation. This provides a cross-validated RMSE of 0.70 and <span class="math inline">\(r^2 = 0.89\)</span></li>
+<li>We can display results using the <code>plot()</code> function for instance.</li>
+</ol>
+<pre class="r"><code>cutoff_value &lt;- 0.9
+tooHigh &lt;- findCorrelation(cor(solTrainXtrans), cutoff = cutoff_value)
+
+trainXfiltered &lt;- solTrainXtrans[, -tooHigh]
+testXfiltered &lt;- solTestXtrans[, -tooHigh]
+
+ctrl &lt;- trainControl(method = &quot;cv&quot;, number = 10)
+
+set.seed(100)
+lmfiltered &lt;- train(x = trainXfiltered, 
+                    y = solTrainY,
+                    method = &quot;lm&quot;,
+                    trControl = ctrl)
+
+par(mfrow = c(1,2))
+plot(x = predict(lmfiltered), y = solTrainY, xlab = &quot;Predicted&quot;, ylab = &quot;Observed&quot;)
+plot(x = predict(lmfiltered), y = residuals(lmfiltered), xlab =  &quot;Predicted&quot;, ylab = &quot;Residuals&quot;)</code></pre>
+<p><img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre class="r"><code>lmfiltered</code></pre>
+<pre><code>## Linear Regression 
+## 
+## 951 samples
+## 190 predictors
+## 
+## No pre-processing
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 856, 856, 855, 855, 857, 856, ... 
+## Resampling results:
+## 
+##   RMSE       Rsquared   MAE      
+##   0.6980579  0.8857871  0.5251033
+## 
+## Tuning parameter &#39;intercept&#39; was held constant at a value of TRUE</code></pre>

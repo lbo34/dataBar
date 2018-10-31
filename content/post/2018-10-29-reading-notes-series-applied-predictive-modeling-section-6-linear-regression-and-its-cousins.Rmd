@@ -1,0 +1,173 @@
+---
+title: Reading Notes Series - Applied Predictive Modeling - Section 6 (Linear Regression
+  and its cousins) - PART 1
+author: Laurent Barcelo
+date: '2018-10-29'
+slug: reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins
+categories:
+  - Reading Notes
+tags:
+  - regression
+description: ''
+featured_image: ''
+---
+
+This first series is related to M. Kuhn and K. Johnson book "Applied Predictive Modeling". The book pdf is available [here](https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf), but if, like me, you prefer to have a paper copy of the book, you can purchase it [here](https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&qid=1540208647&sr=8-1&keywords=applied+predictive+modeling). **This post is dedicated to section 6 on linear regression and its cousins.**
+
+<img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
+
+As a data analysis practitioner for many years, before reading this chapter of the book, I thought I knew a little bit about linear regression. Well...After going through the chapter, I realize that I didn't know that much, or at least that I know much more now! So, for me, this chapter is again a MUST READ.
+
+Linear regression models can be written in the form:
+
+$$Yi = b_0 + (\sum_{j=1}^{p} b_{ij}.X_{ij}) + e_i$$
+
+This chapter of the book covers:
+
+* **Ordinary Linear regression**;
+* **Partial Least Square (PLS)** regression and **Principal Components Regression (PCR)**;
+* Penalized models such as **ridge regression**, **lasso** and **elastic net**.
+
+The difference between these regression models is first explained with the bias-variance tradeoff (see chapter [5](https://www.lbo34.com/post/reading-notes-series-applied-predictive-modeling-section-5-measuring-performance-in-regression-models/)). Ordinary Linear regression leads to models that have minimum bias (but can be high variance) while the penalized models have a higher bias but can have a lower variance. In some cases, the in spite of a higher bias, because of a lower variance, these penalized model can have a lower RMSE.
+
+One key advantage of linear models that can be written in the form of the above equation is that they are **easily interpretable**. Another one is that it is easy to compute statistics such as the **standard error of the coefficients**, as long as some assumptions are met about the distribution of the models residuals. Therefore, these models are useful for **inference**.
+
+However, a general drawback of these models is their **linear nature** which means that the solution is in the form of an hyperplane. However models can be augmented with **quadratic**, **cubic** or **interaction terms**. Non linear behaviors could be better modeled with other types of models.
+
+
+**The case study dataset**
+
+The chapter starts with a case study that will be used to illustrate the different regression techniques. The purpose is to model the solubility of a compound from a series of descriptors of its chemical structure. The data is stored in the `AppliedPredictiveModeling` package. The dataset is composed on 1,267 compounds. The descriptors can be grouped in 3 categories:
+
+* countinuous descriptors (such as the molecular mass). There are 4 of them;
+* count descriptors (such as the number of bonds). There are 16 of them;
+* binary decriptors (that indicate the presence or absence of a specific feature). There are 208 of them.
+
+The relationship between the solubility (measured on a $log_{10}$ scale) and the the molecular mass is given in the following scatterplot.
+```{r echo=F}
+library(AppliedPredictiveModeling)
+data(solubility)
+
+soltrain <- cbind(solTrainX, solubility = solTrainY)
+soltest <- cbind(solTestX, solubility = solTestY)
+soldata <- rbind(soltrain, soltest)
+
+library(ggplot2)
+ggplot(soldata, aes(x = MolWeight, y = solubility)) +
+  geom_point(alpha = 0.2)
+```
+
+Concerning the dataset, the authors note that:
+
+* Although, overall, the descriptors are not strongly correlated, some of them have correlations greater than 0.90. **This redundancy in information is likely to have some impact on the modeling**.
+* The count predictors are generally right skewed.
+
+For the modeling, the data has been randomly split into a training dataset (n = 951) and a test dataset (n = 316). To tune the models, 10-fold cross-validation will be performed on the training dataset. The performance of the final model will be assessed on the test dataset. In addition, a Box-Cox transformation is applied on the 4 continuous predictors.
+
+The relationships between the count and continuous variables and the solubility can be "screened" graphically using the `caret::featurePlot()` function and a correlation matrix using the `corrplot` package (with the "hclust" ordering as seen in previous [chapters](https://www.lbo34.com/post/reading-notes-series-applied-predictive-modeling-section-3/):
+
+```{r warning=F}
+suppressMessages(library(caret))
+notFingerprints <- grep("FP", names(solTrainXtrans))
+
+featurePlot(solTrainXtrans[, -notFingerprints],
+            solTrainY,
+            type = c("g", "p", "smooth"),
+            labels = rep("", 2))
+
+suppressMessages(library(corrplot))
+
+corrplot(cor(solTrainXtrans[, -notFingerprints]), 
+         order = "hclust", 
+         tl.cex = .8)
+```
+
+In addition, the authors perform a Principal Componenents Analysis to check the correlation between the predictor variables.
+
+```{r warning=F}
+suppressMessages(library(factoextra))
+solXtrans <- rbind(solTrainXtrans, solTestXtrans)
+pca_all <- prcomp(solXtrans, center = TRUE, scale. = TRUE) 
+# Important to scale data.
+fviz_screeplot(pca_all, ncp = 30)
+```
+
+From these initial checks the authors conclude that the data is contained in a much smaller number of dimensions than the number of predictors because of collinearities. Also, some predictors exhibit strong correlations, which could create problems in the development of models if no pre-processing is performed.
+
+
+**Linear Regression**
+
+The objective of linear regression is to find the plane (hyperplane in multidimensions, line in 2D) that minimuzes the sum of square of the errors (SSE) :
+
+$$SSE = \sum_{i=1}^{n} (\hat{Y_i} - Y_i)^2 $$
+
+This plane can be determined analytically and a vector of coefficients is given by:
+
+$$(X^T.X)^{-1}.X^T.y$$
+
+As we make some assumptions on the residuals, this solution is also the one that minimizes the bias in bias-variance tradeoff.. 
+
+Linear regression has some **drawbacks**:
+
+1. The $(X^T.X)$ can be inversed only if the number of samples is larger than the number of predictors (also when performing cross validation...) and if one predictor cannot be determined by a linear combination of the others. If colinearity exists, strategies to remove predictors with high pairwise correlation can be used or the computation of the Variance Inflation Factor can help with the above conditions. 
+
+If it is not enough and the number of predictors still outnumbers the sample size, several strategies are poosible:
+
+* PCA can be used as pre-processing; 
+* Partial Least Square (PLS) which allows simultaneous dimension reduction and regression;
+* Other techniques such as ridge regression, the lasso or the elastic net that shrinks the parameter estimates.
+
+2. The linear nature of the relationship. Some parameters such as quadratic, cubic, interaction terms can be added to alleviate some of this problem... However, if the number of predictors is large initially, this may be unpractical. So if there is obviously a non linear relationship, other modeling technqiues may be more suitable.
+
+3. The linear regression gives a lot of weight to observations that are far away from the general trend (called *influential*). This is due to the minimization of the SSE. In order to reduce this effect, other metrics than SSE can be used:
+
+* use the sum of absolute errors $\sum_{i=1}^{n} |\hat{Y_i} - Y_i|$;
+* use the Huber function (square of errors for small errors and absolute error for larger ones)
+
+Although there is not tuning parameter for linear regression, we still have to perform cross-validation or equivalent.
+
+In order to illustrate the effect of colinearity on regression coefficients, the authors have performed regressions between the solubility variable and two highly correlated variables (`NumNonHAtoms` and `NumNonHBonds`, r = 0.994) in different contexts:
+
+1. `NumNonHAtoms` alone;
+2. `NumNonHBonds` alone;
+3. both variables;
+4. both variables and all other predictors.
+
+The results are summarized in the table below.
+
+![Effect of colinearity on regression coefficients](/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/Regression coefficients with colinearity.png){width=400px}
+
+As they have a very high correlation, when taken individually, the coefficients for the two variables are similar with a similar standard error. When we introduce both variables, as they are highly correlated, (1) the coefficient of one of them is signficantly reduced and (2) the standard error increases by a large amount. This effect is even stronger when all variables are instroduced in the model and there is additional colinearity in the dataset.
+
+In order to apply the linear regression to the training dataset:
+
+1. We start from the `solTrainXtrans` data that has gone through a Box-Cox transformation for the continuous variable
+2. We apply the `caret::findCorrelation()` function to find and eliminate variables with too high pairwise correlation with a cutoff value of 0.9. This removes 38 variables. 
+3. We use the `caret::train()` function with arguments to perform a 10-folds cross-validation. This provides a cross-validated RMSE of 0.70 and $r^2 = 0.89$
+4. We can display results using the `plot()` function for instance.
+
+
+```{r}
+cutoff_value <- 0.9
+tooHigh <- findCorrelation(cor(solTrainXtrans), cutoff = cutoff_value)
+
+trainXfiltered <- solTrainXtrans[, -tooHigh]
+testXfiltered <- solTestXtrans[, -tooHigh]
+
+ctrl <- trainControl(method = "cv", number = 10)
+
+set.seed(100)
+lmfiltered <- train(x = trainXfiltered, 
+                    y = solTrainY,
+                    method = "lm",
+                    trControl = ctrl)
+
+par(mfrow = c(1,2))
+plot(x = predict(lmfiltered), y = solTrainY, xlab = "Predicted", ylab = "Observed")
+plot(x = predict(lmfiltered), y = residuals(lmfiltered), xlab =  "Predicted", ylab = "Residuals")
+lmfiltered
+```
+
+
+
+
