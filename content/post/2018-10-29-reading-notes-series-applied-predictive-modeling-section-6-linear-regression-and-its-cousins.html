@@ -25,11 +25,11 @@ featured_image: ''
 <li><strong>Partial Least Square (PLS)</strong> regression and <strong>Principal Components Regression (PCR)</strong>;</li>
 <li>Penalized models such as <strong>ridge regression</strong>, <strong>lasso</strong> and <strong>elastic net</strong>.</li>
 </ul>
-<p>The difference between these regression models is first explained with the bias-variance tradeoff (see chapter <a href="https://www.lbo34.com/post/reading-notes-series-applied-predictive-modeling-section-5-measuring-performance-in-regression-models/">5</a>). Ordinary Linear regression leads to models that have minimum bias (but can be high variance) while the penalized models have a higher bias but can have a lower variance. In some cases, the in spite of a higher bias, because of a lower variance, these penalized model can have a lower RMSE.</p>
+<p>The difference between these regression models is first explained with the bias-variance tradeoff (see chapter <a href="https://www.lbo34.com/post/reading-notes-series-applied-predictive-modeling-section-5-measuring-performance-in-regression-models/">5</a>). Ordinary Linear regression leads to models that have minimum bias (but can be high variance) while the penalized models have a higher bias but can have a lower variance. In some cases, in spite of a higher bias, because of a lower variance, these penalized model can have a lower RMSE.</p>
 <p>One key advantage of linear models that can be written in the form of the above equation is that they are <strong>easily interpretable</strong>. Another one is that it is easy to compute statistics such as the <strong>standard error of the coefficients</strong>, as long as some assumptions are met about the distribution of the models residuals. Therefore, these models are useful for <strong>inference</strong>.</p>
 <p>However, a general drawback of these models is their <strong>linear nature</strong> which means that the solution is in the form of an hyperplane. However models can be augmented with <strong>quadratic</strong>, <strong>cubic</strong> or <strong>interaction terms</strong>. Non linear behaviors could be better modeled with other types of models.</p>
 <p><strong>The case study dataset</strong></p>
-<p>The chapter starts with a case study that will be used to illustrate the different regression techniques. The purpose is to model the solubility of a compound from a series of descriptors of its chemical structure. The data is stored in the <code>AppliedPredictiveModeling</code> package. The dataset is composed on 1,267 compounds. The descriptors can be grouped in 3 categories:</p>
+<p>The chapter starts with a case study that will be used to illustrate the different regression techniques. The purpose is to model the solubility of a compound from a series of descriptors of its chemical structure. The data is stored in the <code>AppliedPredictiveModeling</code> package. The dataset is composed of 1,267 compounds. The descriptors can be grouped in 3 categories:</p>
 <ul>
 <li>countinuous descriptors (such as the molecular mass). There are 4 of them;</li>
 <li>count descriptors (such as the number of bonds). There are 16 of them;</li>
@@ -65,13 +65,13 @@ pca_all &lt;- prcomp(solXtrans, center = TRUE, scale. = TRUE)
 # Important to scale data.
 fviz_screeplot(pca_all, ncp = 30)</code></pre>
 <p><img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<p>From these initial checks the authors conclude that the data is contained in a much smaller number of dimensions than the number of predictors because of collinearities. Also, some predictors exhibit strong correlations, which could create problems in the development of models if no pre-processing is performed.</p>
+<p>From these initial checks, the authors conclude that the data is contained in a much smaller number of dimensions than the number of predictors because of colinearities. Also, some predictors exhibit strong correlations, which could create problems in the development of models if no pre-processing is performed.</p>
 <p><strong>Linear Regression</strong></p>
-<p>The objective of linear regression is to find the plane (hyperplane in multidimensions, line in 2D) that minimuzes the sum of square of the errors (SSE) :</p>
+<p>The objective of linear regression is to find the plane (hyperplane in multidimensions, line in 2D) that minimizes the sum of square of the errors (SSE) :</p>
 <p><span class="math display">\[SSE = \sum_{i=1}^{n} (\hat{Y_i} - Y_i)^2 \]</span></p>
 <p>This plane can be determined analytically and a vector of coefficients is given by:</p>
 <p><span class="math display">\[(X^T.X)^{-1}.X^T.y\]</span></p>
-<p>As we make some assumptions on the residuals, this solution is also the one that minimizes the bias in bias-variance tradeoff..</p>
+<p>As we make some assumptions on the residuals, this solution is also the one that minimizes the bias in the bias-variance tradeoff.</p>
 <p>Linear regression has some <strong>drawbacks</strong>:</p>
 <ol style="list-style-type: decimal">
 <li>The <span class="math inline">\((X^T.X)\)</span> can be inversed only if the number of samples is larger than the number of predictors (also when performing cross validation…) and if one predictor cannot be determined by a linear combination of the others. If colinearity exists, strategies to remove predictors with high pairwise correlation can be used or the computation of the Variance Inflation Factor can help with the above conditions.</li>
@@ -90,7 +90,7 @@ fviz_screeplot(pca_all, ncp = 30)</code></pre>
 <li>use the sum of absolute errors <span class="math inline">\(\sum_{i=1}^{n} |\hat{Y_i} - Y_i|\)</span>;</li>
 <li>use the Huber function (square of errors for small errors and absolute error for larger ones)</li>
 </ul>
-<p>Although there is not tuning parameter for linear regression, we still have to perform cross-validation or equivalent.</p>
+<p>Although there is no tuning parameter for linear regression, we still have to perform cross-validation or equivalent.</p>
 <p>In order to illustrate the effect of colinearity on regression coefficients, the authors have performed regressions between the solubility variable and two highly correlated variables (<code>NumNonHAtoms</code> and <code>NumNonHBonds</code>, r = 0.994) in different contexts:</p>
 <ol style="list-style-type: decimal">
 <li><code>NumNonHAtoms</code> alone;</li>

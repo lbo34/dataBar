@@ -28,7 +28,7 @@ This chapter of the book covers:
 * **Partial Least Square (PLS)** regression and **Principal Components Regression (PCR)**;
 * Penalized models such as **ridge regression**, **lasso** and **elastic net**.
 
-The difference between these regression models is first explained with the bias-variance tradeoff (see chapter [5](https://www.lbo34.com/post/reading-notes-series-applied-predictive-modeling-section-5-measuring-performance-in-regression-models/)). Ordinary Linear regression leads to models that have minimum bias (but can be high variance) while the penalized models have a higher bias but can have a lower variance. In some cases, the in spite of a higher bias, because of a lower variance, these penalized model can have a lower RMSE.
+The difference between these regression models is first explained with the bias-variance tradeoff (see chapter [5](https://www.lbo34.com/post/reading-notes-series-applied-predictive-modeling-section-5-measuring-performance-in-regression-models/)). Ordinary Linear regression leads to models that have minimum bias (but can be high variance) while the penalized models have a higher bias but can have a lower variance. In some cases, in spite of a higher bias, because of a lower variance, these penalized model can have a lower RMSE.
 
 One key advantage of linear models that can be written in the form of the above equation is that they are **easily interpretable**. Another one is that it is easy to compute statistics such as the **standard error of the coefficients**, as long as some assumptions are met about the distribution of the models residuals. Therefore, these models are useful for **inference**.
 
@@ -37,7 +37,7 @@ However, a general drawback of these models is their **linear nature** which mea
 
 **The case study dataset**
 
-The chapter starts with a case study that will be used to illustrate the different regression techniques. The purpose is to model the solubility of a compound from a series of descriptors of its chemical structure. The data is stored in the `AppliedPredictiveModeling` package. The dataset is composed on 1,267 compounds. The descriptors can be grouped in 3 categories:
+The chapter starts with a case study that will be used to illustrate the different regression techniques. The purpose is to model the solubility of a compound from a series of descriptors of its chemical structure. The data is stored in the `AppliedPredictiveModeling` package. The dataset is composed of 1,267 compounds. The descriptors can be grouped in 3 categories:
 
 * countinuous descriptors (such as the molecular mass). There are 4 of them;
 * count descriptors (such as the number of bonds). There are 16 of them;
@@ -92,12 +92,12 @@ pca_all <- prcomp(solXtrans, center = TRUE, scale. = TRUE)
 fviz_screeplot(pca_all, ncp = 30)
 ```
 
-From these initial checks the authors conclude that the data is contained in a much smaller number of dimensions than the number of predictors because of collinearities. Also, some predictors exhibit strong correlations, which could create problems in the development of models if no pre-processing is performed.
+From these initial checks, the authors conclude that the data is contained in a much smaller number of dimensions than the number of predictors because of colinearities. Also, some predictors exhibit strong correlations, which could create problems in the development of models if no pre-processing is performed.
 
 
 **Linear Regression**
 
-The objective of linear regression is to find the plane (hyperplane in multidimensions, line in 2D) that minimuzes the sum of square of the errors (SSE) :
+The objective of linear regression is to find the plane (hyperplane in multidimensions, line in 2D) that minimizes the sum of square of the errors (SSE) :
 
 $$SSE = \sum_{i=1}^{n} (\hat{Y_i} - Y_i)^2 $$
 
@@ -105,7 +105,7 @@ This plane can be determined analytically and a vector of coefficients is given 
 
 $$(X^T.X)^{-1}.X^T.y$$
 
-As we make some assumptions on the residuals, this solution is also the one that minimizes the bias in bias-variance tradeoff.. 
+As we make some assumptions on the residuals, this solution is also the one that minimizes the bias in the bias-variance tradeoff. 
 
 Linear regression has some **drawbacks**:
 
@@ -124,7 +124,7 @@ If it is not enough and the number of predictors still outnumbers the sample siz
 * use the sum of absolute errors $\sum_{i=1}^{n} |\hat{Y_i} - Y_i|$;
 * use the Huber function (square of errors for small errors and absolute error for larger ones)
 
-Although there is not tuning parameter for linear regression, we still have to perform cross-validation or equivalent.
+Although there is no tuning parameter for linear regression, we still have to perform cross-validation or equivalent.
 
 In order to illustrate the effect of colinearity on regression coefficients, the authors have performed regressions between the solubility variable and two highly correlated variables (`NumNonHAtoms` and `NumNonHBonds`, r = 0.994) in different contexts:
 
