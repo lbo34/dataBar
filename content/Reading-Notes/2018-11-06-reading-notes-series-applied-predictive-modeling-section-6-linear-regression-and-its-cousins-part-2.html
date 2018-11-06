@@ -7,7 +7,6 @@ slug: reading-notes-series-applied-predictive-modeling-section-6-linear-regressi
 categories:
   - Reading Notes
 tags:
-  - Books
   - regression
 description: ''
 featured_image: ''
@@ -17,3 +16,187 @@ featured_image: ''
 
 <p>This first series is related to M. Kuhn and K. Johnson book “Applied Predictive Modeling”. The book pdf is available <a href="https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf">here</a>, but if, like me, you prefer to have a paper copy of the book, you can purchase it <a href="https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&amp;qid=1540208647&amp;sr=8-1&amp;keywords=applied+predictive+modeling">here</a>. <strong>This post is dedicated to section 6 on linear regression.</strong></p>
 <p><img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/></p>
+<p>This post (section 6, part II) builds on <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/">part I</a> (ordynary linear regression) focuses on non ordinary linear regression models.</p>
+<p><strong>Partial Least Squares</strong></p>
+<p>As explained in part I, when the predictors are higly correlated, ordinary linear regression becomes unstable. The <strong>removal of the high pairwise correlations does not guarantee that the problem will be solved</strong>. However, using <strong>PCA</strong> as a pre-treatment will lead to uncorrelated factors. This process is called <strong>Principal Component Regression</strong> (<strong>PCR</strong>). It can also be applied in cases when we have <strong>more predictors than observations</strong>. However, the we may loose some interpretability of the meaning of the predictors.</p>
+<p>One of the drawback of PCR is that the dimension reduction through <strong>PCA does not necesarily produce factors that are highly correlated with the response</strong> as the dimension reduction only deals with the predictors space. <strong>Partial Least Square</strong> (<strong>PLS</strong>) however allows to solve this problem and the authors <strong>recommend to use PLS when performing linear regression with correlated predictors</strong>.</p>
+<p>The principle of PLS is summarized in the figure below. At the difference of PCA, PLS leads to <strong>linear combinations of predictors that maximally summarize the covariance with the reponse</strong>. It means that PLS finds components that simultaneously maximizes the variance in the predictors space and maximizes the correlation of these components with the response. For the authors, it can be viewed as a <strong>supervised dimension reduction procedure</strong>. Because of this, PCR generally leads to models that include <strong>more components</strong> than PLS.As it is the case for PCA, <strong>predictors should be centered and scaled before using PLS</strong>.</p>
+<div class="figure">
+<img src="/Reading-Notes/2018-11-06-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins-part-2_files/PLS%20principle.png" alt="Principle of Partial Least Square Regression" width="400" />
+<p class="caption">Principle of Partial Least Square Regression</p>
+</div>
+<p>In the example below, we compare the performance of PCR and PLS on the case-study introduced in <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/">part I</a> using cross validation. The authors highlight that using the 1 Standard-deviation rule (<a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-4-over-fitting-and-model-tuning/">section 4</a>), PLS leads to a model with just 8 components.</p>
+<pre class="r"><code># PCR model
+set.seed(100)
+pcrTune &lt;- train(x = solTrainXtrans, y = solTrainY,
+                 method = &quot;pcr&quot;,
+                 tuneGrid = expand.grid(ncomp = 1:35),
+                 trControl = ctrl,
+                 preProcess = c(&quot;center&quot;, &quot;scale&quot;))
+
+#PLS model
+set.seed(100)
+plsTune &lt;- train(x = solTrainXtrans, y = solTrainY,
+                 method = &quot;pls&quot;,
+                 tuneGrid = expand.grid(ncomp = 1:20),
+                 trControl = ctrl,
+                 preProcess = c(&quot;center&quot;, &quot;scale&quot;))
+
+#Plotting of RMSE vs. #Components for each model type
+pcrResamples &lt;- pcrTune$results
+pcrResamples$Model &lt;- &quot;PCR&quot;
+plsResamples &lt;- plsTune$results
+plsResamples$Model &lt;- &quot;PLS&quot;
+plsPlotData &lt;- rbind(plsResamples, pcrResamples)
+
+xyplot(RMSE ~ ncomp,
+       data = plsPlotData,
+       #aspect = 1,
+       xlab = &quot;# Components&quot;,
+       ylab = &quot;RMSE (Cross-Validation)&quot;,
+       auto.key = list(columns = 2),
+       groups = Model,
+       type = c(&quot;o&quot;, &quot;g&quot;))</code></pre>
+<p><img src="/Reading-Notes/2018-11-06-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins-part-2_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>As it is the case for PCR, the <strong>contribution of each predictor is less straightforward to understand</strong> in PLS than it is in ordinary regression. One algorithm that is proposed is called the <em>variable importance in the projection</em> (<strong>VIP</strong>). Using the <code>caret</code> package, the function <code>varImp()</code> can be used as shown in the example below. The authors mention that, as a rule of thumb, VIP values above 1 are considered to contain predictive information… but here the results seem to be on a different scale (?).</p>
+<pre class="r"><code>plsImp &lt;- varImp(plsTune, scale = F)
+plot(plsImp, top = 25, scales = list(y = list(cex = .95)))</code></pre>
+<p><img src="/Reading-Notes/2018-11-06-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins-part-2_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>The <strong>NIPALS algorithm</strong> which is at the root of the PLS regression <strong>becomes inefficient for large datasets</strong> (n &gt; 2,500, number of prédictors p&gt;30). Some researchers proposed alternative approaches such as the <strong>SIMPLS algorithm</strong> which is more efficient and lead to the same latent variables when there is only one response analysed.</p>
+<p>Other researchers recently proposed other modifications. One of the more efficient, especially when (n&gt;&gt;p) is from Dayal and MacGregor [it still becomes inefficient when p increases].</p>
+<p><strong>Penalized Models</strong></p>
+<p>As explained by the authors(see the beggining of <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/">part I</a>), Ordinary Linear Regression models lead to models that have the <strong>minimum bias</strong> (and it has also the lowest variance of all the unbiased techniques). However, as the RMSE is composed of the sum of the bias and variance, <strong>RMSE is not necessarily minimized when the bias is minimized</strong>, especially in cases when the variance is high, as it is the case when there is multicolinearity within the predictors. In that case, using biased models may be a way to improve the overal RMSE.</p>
+<p>In cases where we have colinearly, we have seen <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/">part I</a>)] that the <strong>regressions coefficients may become inflated</strong> and have high standard error. One way to prevent this from happening is to <strong>penalize the SSE</strong> by adding a penalty <strong>when the regression coefficients become too large</strong>. This is for instance what <strong>Ridge regression</strong> does :</p>
+<p><span class="math display">\[SSE_{L_2} = \sum_{i=1}^{n}(y_i - \hat{y_i})^2 + \lambda\sum_{j=1}^{p}\beta_j^2\]</span>
+where <span class="math inline">\(L_2\)</span> means that it is a second order penalty (square of the coefficients). Coefficients are then allowed to become large only their effect on SSE compensates the penalty. These techniques are sometimes referred as <strong>“shrinkage methods”</strong> as the regression coefficients shrinks toward 0 as <span class="math inline">\(\lambda\)</span> increases.</p>
+<p>The code below allows to perform cross-validated Ridge Regressions for a range of <span class="math inline">\(\lambda\)</span> from 0 to 0.1. In this case, the <strong>optimal value of <span class="math inline">\(\lambda\)</span> is 0.03</strong>.</p>
+<pre class="r"><code>## Ridge regression - Optimal value of lambda
+ridgeGrid &lt;- expand.grid(lambda = seq(0, .1, length = 15))
+
+set.seed(100)
+ridgeTune &lt;- train(x = solTrainXtrans, y = solTrainY,
+                   method = &quot;ridge&quot;,
+                   tuneGrid = ridgeGrid,
+                   trControl = ctrl,
+                   preProc = c(&quot;center&quot;, &quot;scale&quot;))
+ridgeTune</code></pre>
+<pre><code>## Ridge Regression 
+## 
+## 951 samples
+## 228 predictors
+## 
+## Pre-processing: centered (228), scaled (228) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 856, 856, 855, 855, 857, 856, ... 
+## Resampling results across tuning parameters:
+## 
+##   lambda       RMSE       Rsquared   MAE      
+##   0.000000000  0.6923558  0.8872977  0.5194817
+##   0.007142857  0.6842051  0.8901855  0.5180204
+##   0.014285714  0.6782572  0.8924345  0.5135023
+##   0.021428571  0.6763196  0.8933364  0.5129646
+##   0.028571429  0.6761659  0.8936611  0.5137609
+##   0.035714286  0.6770285  0.8936769  0.5150076
+##   0.042857143  0.6785555  0.8935075  0.5169778
+##   0.050000000  0.6805575  0.8932196  0.5190373
+##   0.057142857  0.6829220  0.8928530  0.5213703
+##   0.064285714  0.6855755  0.8924331  0.5238093
+##   0.071428571  0.6884742  0.8919761  0.5263585
+##   0.078571429  0.6915802  0.8914943  0.5290529
+##   0.085714286  0.6948706  0.8909958  0.5318508
+##   0.092857143  0.6983276  0.8904864  0.5347012
+##   0.100000000  0.7019378  0.8899703  0.5375828
+## 
+## RMSE was used to select the optimal model using the smallest value.
+## The final value used for the model was lambda = 0.02857143.</code></pre>
+<pre class="r"><code>print(update(plot(ridgeTune), xlab = &quot;Penalty&quot;))</code></pre>
+<p><img src="/Reading-Notes/2018-11-06-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins-part-2_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>As we saw, with Ridge regression, as <span class="math inline">\(\lambda\)</span> increases, the regression coefficients shrinks to 0. However, even for large values of <span class="math inline">\(\lambda\)</span>, these values are never set to 0 and the Ridge regression does not lead to <strong>feature selection</strong>. A slight modification known as the <strong>LASSO</strong> (least absolute shrinkage and selection operator) allows to set some regression coefficients to 0 for some values of <span class="math inline">\(\lambda\)</span>. This methods uses a slightly modified penalization:</p>
+<p><span class="math display">\[SSE_{L_1} = \sum_{i=1}^{n}(y_i - \hat{y_i})^2 + \lambda\sum_{j=1}^{p}|\beta_j|\]</span></p>
+<pre class="r"><code>## Lasso regression for a range of lambda values and fractions of coefficients set to 0
+enetGrid &lt;- expand.grid(lambda = c(0, 0.01, .1), 
+                        fraction = seq(.05, 1, length = 20))
+set.seed(100)
+enetTune &lt;- train(x = solTrainXtrans, y = solTrainY,
+                  method = &quot;enet&quot;,
+                  tuneGrid = enetGrid,
+                  trControl = ctrl,
+                  preProc = c(&quot;center&quot;, &quot;scale&quot;))
+enetTune</code></pre>
+<pre><code>## Elasticnet 
+## 
+## 951 samples
+## 228 predictors
+## 
+## Pre-processing: centered (228), scaled (228) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 856, 856, 855, 855, 857, 856, ... 
+## Resampling results across tuning parameters:
+## 
+##   lambda  fraction  RMSE       Rsquared   MAE      
+##   0.00    0.05      0.8755598  0.8356351  0.6620559
+##   0.00    0.10      0.6899113  0.8890757  0.5260548
+##   0.00    0.15      0.6713621  0.8943364  0.5121016
+##   0.00    0.20      0.6674143  0.8954542  0.5082713
+##   0.00    0.25      0.6731779  0.8935298  0.5109564
+##   0.00    0.30      0.6768679  0.8921370  0.5128964
+##   0.00    0.35      0.6818022  0.8903908  0.5171959
+##   0.00    0.40      0.6878961  0.8883655  0.5219846
+##   0.00    0.45      0.6902849  0.8876381  0.5234156
+##   0.00    0.50      0.6894418  0.8878991  0.5226878
+##   0.00    0.55      0.6891897  0.8879858  0.5221163
+##   0.00    0.60      0.6888324  0.8881288  0.5209782
+##   0.00    0.65      0.6885227  0.8882634  0.5201492
+##   0.00    0.70      0.6883305  0.8883662  0.5194023
+##   0.00    0.75      0.6885974  0.8883067  0.5192622
+##   0.00    0.80      0.6889540  0.8882246  0.5192143
+##   0.00    0.85      0.6894561  0.8880944  0.5191775
+##   0.00    0.90      0.6901746  0.8879007  0.5191666
+##   0.00    0.95      0.6911112  0.8876425  0.5192466
+##   0.00    1.00      0.6923558  0.8872977  0.5194817
+##   0.01    0.05      1.5165004  0.6427110  1.1640469
+##   0.01    0.10      1.1335881  0.7693848  0.8688505
+##   0.01    0.15      0.9082548  0.8265748  0.6887554
+##   0.01    0.20      0.7912412  0.8586010  0.6024908
+##   0.01    0.25      0.7323069  0.8763575  0.5572857
+##   0.01    0.30      0.7011931  0.8857744  0.5343105
+##   0.01    0.35      0.6868522  0.8899081  0.5253021
+##   0.01    0.40      0.6804554  0.8917426  0.5208382
+##   0.01    0.45      0.6752302  0.8932686  0.5169193
+##   0.01    0.50      0.6714331  0.8944204  0.5136019
+##   0.01    0.55      0.6678546  0.8955092  0.5106427
+##   0.01    0.60      0.6665202  0.8959019  0.5090576
+##   0.01    0.65      0.6666996  0.8958473  0.5085328
+##   0.01    0.70      0.6679735  0.8954491  0.5087516
+##   0.01    0.75      0.6693781  0.8950203  0.5086616
+##   0.01    0.80      0.6707811  0.8945989  0.5088026
+##   0.01    0.85      0.6725957  0.8940333  0.5093261
+##   0.01    0.90      0.6748843  0.8932988  0.5109531
+##   0.01    0.95      0.6778943  0.8923406  0.5130915
+##   0.01    1.00      0.6810468  0.8913490  0.5155368
+##   0.10    0.05      1.6869336  0.5081767  1.2944645
+##   0.10    0.10      1.4054421  0.6953997  1.0763231
+##   0.10    0.15      1.1689200  0.7610736  0.8948452
+##   0.10    0.20      1.0077473  0.7896340  0.7677482
+##   0.10    0.25      0.8950878  0.8237478  0.6784772
+##   0.10    0.30      0.8214044  0.8453711  0.6243831
+##   0.10    0.35      0.7788882  0.8584478  0.5969539
+##   0.10    0.40      0.7542977  0.8671729  0.5789062
+##   0.10    0.45      0.7369840  0.8737220  0.5664565
+##   0.10    0.50      0.7272470  0.8776960  0.5595725
+##   0.10    0.55      0.7197436  0.8808023  0.5541419
+##   0.10    0.60      0.7142882  0.8831271  0.5501985
+##   0.10    0.65      0.7098501  0.8850559  0.5466563
+##   0.10    0.70      0.7077325  0.8861902  0.5446117
+##   0.10    0.75      0.7062975  0.8870517  0.5427324
+##   0.10    0.80      0.7049151  0.8878337  0.5408806
+##   0.10    0.85      0.7038168  0.8885017  0.5395946
+##   0.10    0.90      0.7029708  0.8890847  0.5384762
+##   0.10    0.95      0.7022639  0.8895938  0.5377350
+##   0.10    1.00      0.7019378  0.8899703  0.5375828
+## 
+## RMSE was used to select the optimal model using the smallest value.
+## The final values used for the model were fraction = 0.6 and lambda = 0.01.</code></pre>
+<pre class="r"><code>plot(enetTune)</code></pre>
+<p><img src="/Reading-Notes/2018-11-06-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins-part-2_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>This type of models is an area of intense research. The <strong>LARS</strong> (least angle regression) model which is a broad framework that encompasses the lasso and similar models. It can fit lasso models more efficiently, in particular for large amount of predictors. Another generalization is the elastic net model that combines the <span class="math inline">\(SSE_{L_1}\)</span> and <span class="math inline">\(SSE_{L_2}\)</span> type of penalties.</p>

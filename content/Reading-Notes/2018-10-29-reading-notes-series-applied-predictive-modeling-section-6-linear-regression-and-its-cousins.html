@@ -38,7 +38,7 @@ Part II focuses on the other models.</p>
 <li><strong>binary decriptors</strong> (that indicate the presence or absence of a specific feature). There are 208 of them.</li>
 </ul>
 <p>The relationship between the solubility (measured on a <span class="math inline">\(log_{10}\)</span> scale) and the the molecular mass is given in the following scatterplot.
-<img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<img src="/Reading-Notes/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
 <p>Concerning the dataset, the authors note that:</p>
 <ul>
 <li>Although, overall, the descriptors are not strongly correlated, some of them have correlations greater than 0.90. <strong>This redundancy in information is likely to have some impact on the modeling</strong>.</li>
@@ -53,20 +53,20 @@ featurePlot(solTrainXtrans[, -notFingerprints],
             solTrainY,
             type = c(&quot;g&quot;, &quot;p&quot;, &quot;smooth&quot;),
             labels = rep(&quot;&quot;, 2))</code></pre>
-<p><img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="/Reading-Notes/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <pre class="r"><code>suppressMessages(library(corrplot))
 
 corrplot(cor(solTrainXtrans[, -notFingerprints]), 
          order = &quot;hclust&quot;, 
          tl.cex = .8)</code></pre>
-<p><img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+<p><img src="/Reading-Notes/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
 <p>In addition, the authors perform a <strong>Principal Componenents Analysis</strong> to check the correlation between the predictor variables (note: it is important here to center and scale the variables are they have different ranges of variation).</p>
 <pre class="r"><code>suppressMessages(library(factoextra))
 solXtrans &lt;- rbind(solTrainXtrans, solTestXtrans)
 pca_all &lt;- prcomp(solXtrans, center = TRUE, scale. = TRUE) 
 # Important to scale data.
 fviz_screeplot(pca_all, ncp = 30)</code></pre>
-<p><img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="/Reading-Notes/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>From these initial checks, the authors conclude that the <strong>data is contained in a much smaller number of dimensions than the number of predictors because of colinearities</strong>. Also, some predictors exhibit strong correlations, which <strong>could create problems in the development of models if no pre-processing is performed</strong>.</p>
 <p><strong>Linear Regression</strong></p>
 <p>The objective of linear regression is to find the plane (hyperplane in multidimensions, line in 2D) that minimizes the sum of square of the errors (SSE) :</p>
@@ -131,7 +131,7 @@ par(mfrow = c(1,2))
 plot(x = predict(lmfiltered), y = solTrainY, xlab = &quot;Predicted&quot;, ylab = &quot;Observed&quot;)
 abline(a = 0, b = 1, col = &quot;red&quot;)
 plot(x = predict(lmfiltered), y = residuals(lmfiltered), xlab =  &quot;Predicted&quot;, ylab = &quot;Residuals&quot;)</code></pre>
-<p><img src="/post/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="/Reading-Notes/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <pre class="r"><code>lmfiltered</code></pre>
 <pre><code>## Linear Regression 
 ## 
