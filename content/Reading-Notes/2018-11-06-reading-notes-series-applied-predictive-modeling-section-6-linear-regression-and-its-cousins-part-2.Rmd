@@ -96,7 +96,7 @@ As explained by the authors(see the beggining of [part I](https://www.lbo34.com/
 In cases where we have colinearly, we have seen [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/))] that the **regressions coefficients may become inflated** and have high standard error. One way to prevent this from happening is to **penalize the SSE** by adding a penalty **when the regression coefficients become too large**. This is for instance what **Ridge regression** does :
 
 $$SSE_{L_2} = \sum_{i=1}^{n}(y_i - \hat{y_i})^2 + \lambda\sum_{j=1}^{p}\beta_j^2$$
-where $L_2$ means that it is a second order penalty (square of the coefficients). Coefficients are then allowed to become large only their effect on SSE compensates the penalty. These techniques are sometimes referred as **"shrinkage methods"** as the regression coefficients shrinks toward 0 as $\lambda$ increases.
+where $L_2$ means that it is a second order penalty (square of the coefficients). Coefficients are then allowed to become large only if their effect on SSE compensates the penalty. These techniques are sometimes referred as **"shrinkage methods"** as the regression coefficients shrinks toward 0 as $\lambda$ increases.
 
 The code below allows to perform cross-validated Ridge Regressions for a range of $\lambda$ from 0 to 0.1. In this case, the **optimal value of $\lambda$ is 0.03**.
 
