@@ -16,20 +16,20 @@ This first series is related to M. Kuhn and K. Johnson book "Applied Predictive 
 
 <img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
 
-This post (section 6, part II) builds on [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/) (ordynary linear regression) focuses on non ordinary linear regression models.
+This post (section 6, part II) builds on [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/) (ordinary linear regression). It focuses on the **"cousins" of ordinary linear regression**.
 
 
 **Partial Least Squares**
 
-As explained in part I, when the predictors are higly correlated, ordinary linear regression becomes unstable. The **removal of the high pairwise correlations does not guarantee that the problem will be solved**. However, using **PCA** as a pre-treatment will lead to uncorrelated factors. This process is called **Principal Component Regression** (**PCR**). It can also be applied in cases when we have **more predictors than observations**. However, the we may loose some interpretability of the meaning of the predictors.
+As explained in part I, when the predictors are highly correlated, ordinary linear regression becomes unstable. The **removal of the high pairwise correlations within the predictors does not guarantee that the problem will be solved**. However, using **PCA** as a pre-treatment will lead to uncorrelated factors. This process is called **Principal Component Regression** (**PCR**). PCR is also relevant in cases where we have **more predictors than observations**. However, one of the problem is that we **loose some interpretability** of the predictors on the response.
 
-One of the drawback of PCR is that the dimension reduction through **PCA does not necesarily produce factors that are highly correlated with the response** as the dimension reduction only deals with the predictors space. **Partial Least Square** (**PLS**) however allows to solve this problem and the authors **recommend to use PLS when performing linear regression with correlated predictors**.
+Another drawback of PCR is that the dimension reduction through **PCA does not necesarily produce factors that are highly correlated with the response** as the dimension reduction only happens in the predictors space. **Partial Least Square** (**PLS**) allows to alleviate this problem and the authors **recommend to use PLS over PCR when performing linear regression with correlated predictors**.
 
-The principle of PLS is summarized in the figure below. At the difference of PCA, PLS leads to **linear combinations of predictors that maximally summarize the covariance with the reponse**. It means that PLS finds components that simultaneously maximizes the variance in the predictors space and maximizes the correlation of these components with the response. For the authors, it can be viewed as a **supervised dimension reduction procedure**. Because of this, PCR generally leads to models that include **more components** than PLS.As it is the case for PCA, **predictors should be centered and scaled before using PLS**.
+The principle of PLS is summarized in the figure below. At the difference of PCA, PLS leads to **linear combinations of predictors that maximally summarize the covariance with the reponse**. It means that PLS finds the components that simultaneously maximizes the variance in the predictors space while maximizing the correlation of these components with the response. As the authors state, it can be viewed as a **supervised dimension reduction procedure**. Because of this, PLS  generally leads to models that include **fewer components** than PCR.As it is the case for PCA, **the predictors should be centered and scaled before using PLS**.
 
 ![Principle of Partial Least Square Regression](/Reading-Notes/2018-11-06-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins-part-2_files/PLS principle.png){width=400px}
 
-In the example below, we compare the performance of PCR and PLS on the case-study introduced in [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/) using cross validation. The authors highlight that using the 1 Standard-deviation rule ([section 4](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-4-over-fitting-and-model-tuning/)), PLS leads to a model with just 8 components.
+In the example below, we compare the performance of PCR and PLS on the case-study introduced in [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/). We use a cross-validation resampling to evaluate the models performance. The authors highlight that using the 1 Standard-deviation rule ([section 4](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-4-over-fitting-and-model-tuning/)), PLS leads to a model with just 8 components.
 
 
 ```{r echo=FALSE, warning=F}
@@ -77,23 +77,23 @@ xyplot(RMSE ~ ncomp,
 
 ```
 
-As it is the case for PCR, the **contribution of each predictor is less straightforward to understand** in PLS than it is in ordinary regression. One algorithm that is proposed is called the *variable importance in the projection* (**VIP**). Using the `caret` package, the function `varImp()` can be used as shown in the example below. The authors mention that, as a rule of thumb, VIP values above 1 are considered to contain predictive information... but here the results seem to be on a different scale (?).
+As it is the case for PCR, the **contribution of each predictor to the variation of the response is less straightforward to understand** in PLS than it is in ordinary regression. One algorithm that is proposed is called the *variable importance in the projection* (**VIP**). Using the `caret` package, the function `varImp()` can be used as shown in the example below. The authors mention that, as a rule of thumb, VIP values above 1 are considered to contain predictive information... but here the results seem to be on a different scale (?).
 
 ```{r}
 plsImp <- varImp(plsTune, scale = F)
 plot(plsImp, top = 25, scales = list(y = list(cex = .95)))
 ```
 
-The **NIPALS algorithm** which is at the root of the PLS regression **becomes inefficient for large datasets** (n > 2,500, number of prédictors p>30). Some researchers proposed alternative approaches such as the **SIMPLS algorithm** which is more efficient and lead to the same latent variables when there is only one response analysed.
+The **NIPALS algorithm** which is at the root of the PLS regression **becomes inefficient for large datasets** (n > 2,500, number of predictors p>30). Some researchers proposed alternative approaches such as the **SIMPLS algorithm** which is more efficient and lead to the same latent variables when there is only one response analysed.
 
-Other researchers recently proposed other modifications. One of the more efficient, especially when (n>>p) is from Dayal and MacGregor [it still becomes inefficient when p increases].
+Other researchers recently proposed other modifications. One of the most efficient, especially when (n>>p) is from Dayal and MacGregor [it still becomes inefficient when p increases].
 
 
 **Penalized Models**
 
-As explained by the authors(see the beggining of [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/)), Ordinary Linear Regression models lead to models that have the **minimum bias** (and it has also the lowest variance of all the unbiased techniques). However, as the RMSE is composed of the sum of the bias and variance, **RMSE is not necessarily minimized when the bias is minimized**, especially in cases when the variance is high, as it is the case when there is multicolinearity within the predictors. In that case, using biased models may be a way to improve the overal RMSE.
+As explained by the authors (see the beginning of [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/)), Ordinary Linear Regression models lead to models that have the **minimum bias**. However, as the RMSE is composed of the sum of the bias and variance, **RMSE is not necessarily minimized when the bias is minimized**, especially in cases when the variance is high, as it is the case when there is multicolinearity within the predictors. In that case, using biased models may be a way to improve the overall RMSE.
 
-In cases where we have colinearly, we have seen [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/))] that the **regressions coefficients may become inflated** and have high standard error. One way to prevent this from happening is to **penalize the SSE** by adding a penalty **when the regression coefficients become too large**. This is for instance what **Ridge regression** does :
+In cases where we have colinearity, we saw in [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/) that the **regressions coefficients may become inflated** and have high standard error. One way to prevent this from happening is to **penalize the SSE** by adding a penalty **when the regression coefficients become too large**. This is for instance what the **Ridge regression** does with the following modification of the SSE:
 
 $$SSE_{L_2} = \sum_{i=1}^{n}(y_i - \hat{y_i})^2 + \lambda\sum_{j=1}^{p}\beta_j^2$$
 where $L_2$ means that it is a second order penalty (square of the coefficients). Coefficients are then allowed to become large only if their effect on SSE compensates the penalty. These techniques are sometimes referred as **"shrinkage methods"** as the regression coefficients shrinks toward 0 as $\lambda$ increases.
@@ -115,9 +115,11 @@ ridgeTune
 print(update(plot(ridgeTune), xlab = "Penalty"))
 ```
 
-As we saw, with Ridge regression, as $\lambda$ increases, the regression coefficients shrinks to 0. However, even for large values of $\lambda$, these values are never set to 0 and the Ridge regression does not lead to **feature selection**. A slight modification known as the **LASSO** (least absolute shrinkage and selection operator) allows to set some regression coefficients to 0 for some values of $\lambda$. This methods uses a slightly modified penalization:
+As we saw, with the Ridge regression, as $\lambda$ increases, the regression coefficients shrinks to 0. However, even for large values of $\lambda$, these values are never set to 0 and the Ridge regression does not lead to **feature selection**. A slight modification known as the **lasso regression** (least absolute shrinkage and selection operator) allows to set some regression coefficients to 0 for some values of $\lambda$. This methods uses a slightly modified penalization:
 
 $$SSE_{L_1} = \sum_{i=1}^{n}(y_i - \hat{y_i})^2 + \lambda\sum_{j=1}^{p}|\beta_j|$$
+See the example code below:
+
 ```{r}
 ## Lasso regression for a range of lambda values and fractions of coefficients set to 0
 enetGrid <- expand.grid(lambda = c(0, 0.01, .1), 
@@ -133,4 +135,4 @@ enetTune
 plot(enetTune)
 ```
 
-This type of models is an area of intense research. The **LARS** (least angle regression) model which is a broad framework that encompasses the lasso and similar models. It can fit lasso models more efficiently, in particular for large amount of predictors. Another generalization is the elastic net model that combines the $SSE_{L_1}$ and $SSE_{L_2}$ type of penalties.
+This type of models is an area of intense research. The **LARS** (least angle regression) model for instance is a broad framework that encompasses the lasso and similar models. It can fit lasso models more efficiently, in particular for large amount of predictors. Another generalization is the elastic net model that combines the $SSE_{L_1}$ and $SSE_{L_2}$ type of penalties...
