@@ -25,7 +25,7 @@ featured_image: ''
 
 * Sum of cross-products: $\text{SXY} = \sum_{i=1}^n(x_i - \bar{x})(y_i - \bar{y})$
 
-* Sample covariance: $s_{XY} = \frac{\text{SXY}}{n-1}$
+* Sample covariance: $s_{xy} = \frac{\text{SXY}}{n-1}$
 
 * Residual Sum of Square (RSS) or SSE: $\text{RSS} = \text{SSE} = \sum_{i=1}^n(y_i - \hat{y_i})^2$
 
