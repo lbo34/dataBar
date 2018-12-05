@@ -228,7 +228,7 @@ As the prediction is based on distance between points, difference in scale betwe
 
 The **optimal number of neighbors K can be found using resampling techniques** as shwon in the code below. In the case study example, the optimal value of K is found to be K=4. The RMSE estimated is 1.04.
 
-```{r}
+```{r eval = F}
 ### First we remove near-zero variance predictors
 knnDescr <- solTrainXtrans[, -nearZeroVar(solTrainXtrans)]
 
