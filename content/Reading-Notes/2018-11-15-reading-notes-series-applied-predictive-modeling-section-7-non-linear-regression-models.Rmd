@@ -1,0 +1,250 @@
+---
+title: Reading Notes Series - Applied Predictive Modeling - Section 7 (Non Linear
+  Regression Models)
+author: Laurent Barcelo
+date: '2018-11-15'
+slug: reading-notes-series-applied-predictive-modeling-section-7-non-linear-regression-models
+categories:
+  - Reading Notes
+tags:
+  - regression
+  - non linear regression
+description: ''
+featured_image: ''
+---
+
+This first series is related to M. Kuhn and K. Johnson book "Applied Predictive Modeling". The book pdf is available [here](https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf), but if, like me, you prefer to have a paper copy of the book, you can purchase it [here](https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&qid=1540208647&sr=8-1&keywords=applied+predictive+modeling). **This post is dedicated to section 7 on non linear regression models**
+
+<img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
+
+This chapter covers some forms of regressions that I was much less familiar with. **4 specific techniques** are covered:
+
+* Neural Networks;
+* Multivariate Adaptative Regression Splines (MARS);
+* Support Vector Machines (SVM);
+* k-nearest neighbors (KNN)
+
+A fifth technique belongs to the same corpus: tree based methods. However, because of their popularity, this type of regression has its own chapter.
+
+The **same case study** that was used in the [linear regression chapter](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/) is used in this chapter. This is very interesting as this allow to compare the performance of different approaches on the same problem.
+
+
+**Neural Networks**
+
+With Neural Networks, the outcome is not directly linked to the descriptors. There is a **layer of intermediate unobserved variables** called *hidden variables* or *hidden units* (see figure). The hidden units are **connected lineary** to the outcome. The `P` predictors are connected linearly to the `H` hidden unit, but **this connection is transformed by a non-linear function** that could be a sigmoidal function for instance:
+
+$$h_k(x) = g(\beta_{0k} + \sum_{j=1}^{P}x_j\beta_{jk})$$
+and
+$$g(u) = \frac{1}{1+e^{-u}}$$
+and
+$$f(x) = \gamma_0 + \sum_{k=1}^{H}\gamma_kh_k(x)$$
+<img src="/Reading-Notes/2018-11-15-reading-notes-series-applied-predictive-modeling-section-7-non-linear-regression-models_files/Neural Networks Principle.png" alt="Neural Networks Principle" width="400px"/>
+
+For this type of models, for `P` predictors and `H` hidden units, the number of parameters to estimate is $H(P+2) + 1$ ($HP$ $\beta_{jk}$ plus $H$ $\beta_{0k}$ plus $H$ $\gamma_k$ plus $\gamma_0$) which means **it can rapidly become very large**. For instance, for the case studies given by the authors with 228 predictors, with 3 hiden units, it would lead to 691 parameters to estimate.
+
+The way to estimate the parameters is generally to **minimize the SSE** (sum of the square of the residuals) which can be a challenging numerical optimization problem. The parameters can be ramdomly initialized to a given value and this value can be optimized through a specific algorithm. One efficient example of such algorithm is called the **back-propagation algorithm** that uses derivatives to converge rapidly. However, this convergence could lead to a local minimum. One correction for this could be **model avaraging** where several models are fitted with different starting points for the initialization of the predictors and are averaged.
+
+With their potantially large number of parameters, Neural Networks are prone to **overfitting**. Several mitigation measures are possible. One of them is the **early stopping**. Another method is the **weight decay** which penalizes the SSE in a similar way as the [Ridge regression](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins-part-2/):
+
+$$\text{SSE}_{\text{weight decay}}= \sum_{i=1}^{n}(y_i - f_i(x))^2 + \lambda\sum_{k=1}^{H}\sum_{j=0}^{P}\beta_{jk}^2 + \lambda\sum_{k=0}^{H}\gamma_k^2$$
+Reasonnable values for $\lambda$ are in the **range 0 to 0.1**. Also, it is important to **center and scale** the predictors prior to fitting the model. As neural networks are **sensitive to colinearity** within predictors, **pre-processing** by removing highly correlated predictors or by performing a principal components analysis can be useful.
+
+The authors state that this type of network is the **simplest neural network** [single-layer feed-forward] but there are many other types (more than one hidden units layer, loops between hidden layers, Bayesian approaches...).
+
+The following code provided by the authors applies a Neural Network fitting to the case study data. In this blog post, the execution of the code is prevented as it takes several hours to run on a recent macbook pro. In the case study example, the lowest RMSE is obtained with H = 11 nodes and a $lambda$ value of 0.1. A plot from the book is repoduced below.
+
+```{r echo=FALSE}
+library(AppliedPredictiveModeling)
+data(solubility)
+suppressMessages(library(caret))
+```
+
+```{r eval = F}
+# creation of 10 folds for cross validation
+# the caret library is loaded
+set.seed(100)
+indx <- createFolds(solTrainY, returnTrain = TRUE)
+ctrl <- trainControl(method = "cv", index = indx)
+
+# parallel computing
+suppressMessages(library(doMC))
+registerDoMC(4)
+
+#definition of the tuning parameters:
+# lambda from 0 to 0.1
+# number of hidden units H from 1 to 13
+
+nnetGrid <- expand.grid(decay = c(0, 0.01, .1), 
+                        size = c(1, 3, 5, 7, 9, 11, 13), 
+                        bag = FALSE)
+set.seed(100)
+nnetTune <- train(x = solTrainXtrans, y = solTrainY,
+                  method = "avNNet",
+                  tuneGrid = nnetGrid,
+                  trControl = ctrl,
+                  preProc = c("center", "scale"),
+                  linout = TRUE,
+                  trace = T,
+                  MaxNWts = 13 * (ncol(solTrainXtrans) + 1) + 13 + 1,
+                  maxit = 500,
+                  allowParallel = F)
+
+nnetTune
+
+nn_plot <- plot(nnetTune)
+nn_plot
+```
+
+<img src="/Reading-Notes/2018-11-15-reading-notes-series-applied-predictive-modeling-section-7-non-linear-regression-models_files/Neural Net training.png" alt="Neural Networks Training" width="400px"/>
+
+
+
+**Multivariate Adaptative Regression Splines**
+
+In MARS regression, the contribution of a given predictor P is **split into two contributions**:
+
+* one contribution (left contribution) for which, **below a certain cut point**, the relationship between the response Y and P has a given slope $\beta_{left}$ and a slope of 0 above the cut point;
+* one other contribution (right contribution) for which, **above this same cut point** the relationship between the response Y and P has a given slope $\beta_{right}$ and a slope of 0 below this cut point
+
+These functions are "hinge" or "hockey stick" functions. An example is given in the figure below.
+
+<img src="/Reading-Notes/2018-11-15-reading-notes-series-applied-predictive-modeling-section-7-non-linear-regression-models_files/MARS regression principle.png" alt="Mars regression principle" width="400px"/>
+
+
+The cut point "a" is determined in such a way that it minimizes the error... which means a large number of of regression candidates are assessed. When the cut point "a" is determined, a **pair of hinge functions enter the model**. These functions are written **h(x-a)** and **h(a-x)**. h(x-a) is nonzero with x>a and h(a-x) is nonzero when x<a. The process next continues with a second variable that has the second contribution to the reduction of the error...
+
+In this first step, both hinge functions enter the model, even if one of them has a modest contribution to the reduction of the error. In a **second step**, the model is **pruned**, which means that the individual functions that do not contribute singificantly to the reduction of the error are discarded. A GCV statistic (Generalized cross-validation statistic) which is an estimation of the Leave-One-Out cross validation RMSE is used during this phase of the process. **The amount of pruning** can be tuned during the training phase of the model.
+
+The MARS process described here is a **first degree** MARS model. **Second degree** models (which seem in the spirit of interactions) are possible. The authors mention that these second degree models are sometimes unstable.
+
+In MARS process, there are 2 tunable parameters:
+
+* The **degree of the model**
+* The **number of terms to be kept** (nprune)
+
+In the code below, the model is tuned for degrees 1 or 2 and for keeping 2 to 38 terms in the model. The tuning here is done using 10 folds cross validation rather than GCV (as defined in trControl of the train function). In this example, resampling led to a more realistic RMSE (ie comparing with the test set)... The authors mention that one reason is that the resampling RMSE characterizes the error in the overall MARS process, including the pruning step.
+
+```{r eval = FALSE}
+set.seed(100)
+marsTune <- train(x = solTrainXtrans, y = solTrainY,
+                  method = "earth",
+                  tuneGrid = expand.grid(degree = 1:2 , nprune = 2:38),
+                  trControl = ctrl)
+
+plot(marsTune)
+```
+
+<img src="/Reading-Notes/2018-11-15-reading-notes-series-applied-predictive-modeling-section-7-non-linear-regression-models_files/MARS training process.png" alt="Mars training" width="400px"/>
+
+In the final model, even though 2nd degree performs very slighlty better, degree 1 MARS is favored with 38 parameters. This leads to a cross validated RMSE of 0.7 log units.
+
+There are **several advantages** in the use of MARS regressions:
+
+* the process leads to **feature selection** through the pruning step. For instance, in the case study, it led to 38 terms with 30 variables out of 228 predictors;
+* the MARS models are **higly interpretable** (partly a consequence of the first point);
+* **little pre-processing** is required. Data transformation, filtering, removal of low contributors is not required.
+
+
+**Support Vector Machines**
+
+SVMs were **first developped as a classification technique**. For regression, these techniques are used in the context of **robust regressions**, less sensitive to outliers. The particular "flavor" of SVM regression which is developped in the book is called $\epsilon$-insensitive.
+
+In classical linear regression using minimization of SSE, the regression can be significantly influenced by few data points far from the regression line (**influential points**, see [here](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins/)). Some mitigation measures exist such as the use of the **Huber function** to evaluate the error can be used... a similar function is used in SVM regression with an important modification: 
+
+* a **threshold $\epsilon$** is defined and datapoints that have absolute residuals lower than $\epsilon$ do not contribute to the regression;
+* beyond the $\epsilon$ threshold, points contribute to a **linear scale amount** (not squared).
+
+In SVM, we try to **minimize the following function**:
+
+$$\text{Cost}\sum_{i=1}^{n}L_\epsilon(y_i-\hat{y_i})+\sum_{j=1}^{P}\beta_j^2$$
+$L_\epsilon()$ is the $\epsilon$-insensitive function. `Cost` is a parameter set by the user that penalizes the large residuals. The prediction equation for a new sample `u` can be written as follows:
+
+$$\hat{y} = \beta_0 + \sum_{i=1}^{n}\alpha_i(\sum_{j=1}^{P}x_{ij}u_j)$$
+This means that there are as many $\alpha_i$ models than there are datapoints... So that means there can be a lot of parameters. It also means that the individual datapoints $x_{ij}$ are required for the prediction... but for a portion of them (with absolute residual lower than $\epsilon$), the $\alpha_i$ will be set to 0. The points that are beyond the $\epsilon$ residual values are the points that generate the fit and are called the **support vectors**.
+
+The robustness of SVM regression to outliers is pictured in the following examples.
+<img src="/Reading-Notes/2018-11-15-reading-notes-series-applied-predictive-modeling-section-7-non-linear-regression-models_files/robustness of SVM regression.png" alt="Robustness of SVM regression" width="400px"/>
+
+The SVM regression function written above can be written more generally using a **kernel function `K()`**. In this case:
+
+$$\hat{y} = \beta_0 + \sum_{i=1}^{n}\alpha_iK(x_i, u) $$
+with 
+$$K(x_i, u) =  \sum_{j=1}^{P}x_{ij}u_j$$
+
+or again using dot product: $K(x_i, u) = x_i'u$
+
+Other kernel functions can be used to generalize the regression model: 
+
+* **polynomial**: $(\phi(x'u) + 1)^\text{degree}$,
+* **radial basis function**:  $\exp(-\sigma||x-u||^2)$... this is the kernel used to fit the sinusoidal fiction shown in the figure above. The choice of this kernel function is often a good choice, 
+* **hyperbolic tangent**: $\tanh(\phi(x'u) + 1)$
+
+with $\phi$ and $\sigma$ scaling parameters... 
+
+When using SVM, it is recommended by the authors to **set a value of $\epsilon$ and to tune the `Cost` parameter**. It is recommended to **center** and **scale** the predictors.
+
+The following code allows to run radial basis function SVM and polynomial SVM on the case study. The authors conclude that the radial basis function is easier to tune and gives similar RMSE than 2nd order polynomial.
+
+```{r eval = F}
+set.seed(100)
+svmRTune <- train(x = solTrainXtrans, y = solTrainY,
+                  method = "svmRadial",
+                  preProc = c("center", "scale"),
+                  tuneLength = 14,
+                  trControl = ctrl)
+svmRTune
+plot(svmRTune, scales = list(x = list(log = 2)))                 
+
+svmGrid <- expand.grid(degree = 1:2, 
+                       scale = c(0.01, 0.005, 0.001), 
+                       C = 2^(-2:5))
+set.seed(100)
+svmPTune <- train(x = solTrainXtrans, y = solTrainY,
+                  method = "svmPoly",
+                  preProc = c("center", "scale"),
+                  tuneGrid = svmGrid,
+                  trControl = ctrl)
+
+svmPTune
+plot(svmPTune, 
+     scales = list(x = list(log = 2), 
+                   between = list(x = .5, y = 1)))                 
+
+testResults$SVMr <- predict(svmRTune, solTestXtrans)
+testResults$SVMp <- predict(svmPTune, solTestXtrans)
+```
+<img src="/Reading-Notes/2018-11-15-reading-notes-series-applied-predictive-modeling-section-7-non-linear-regression-models_files/SVM radial basis function fit.png" alt="SVM radial basis function fit" width="400px"/>
+
+
+
+**K-nearest neighbors**
+
+With the KNN approach, we can **predict the response of a new sample based on the average reponse of its neighbors**... There is no summary model that can be written. KNN is based on the distance between the new samples and the samples in the training dataset. Several distances can be used:
+
+* **Euclidian distance**: $(\sum_{j=1}^{p}(x_{aj} - x_{bj})^2)^{0.5}$
+* **Minkowski distance**: $(\sum_{j=1}^{p}|x_{aj} - x_{bj}|)^{\frac{1}{q}}$ which is a generalization of Euclidian distance. When q = 2, Minkowski distance is equal to the Euclidian distance. When q = 1, this is equivalent to the **Manhattan distance**
+
+As the prediction is based on distance between points, difference in scale between predictors can have a dramatic impact. Therefore, **centering and scaling of predictors is a good practice**. This type of modeling is also very sensitive to **missing data**. Predicting missing data using a **naive estimator** such as the mean of the predictor or the value of the nearest neighbor can be an approach.
+
+The **optimal number of neighbors K can be found using resampling techniques** as shwon in the code below. In the case study example, the optimal value of K is found to be K=4. The RMSE estimated is 1.04.
+
+```{r}
+### First we remove near-zero variance predictors
+knnDescr <- solTrainXtrans[, -nearZeroVar(solTrainXtrans)]
+
+set.seed(100)
+knnTune <- train(x = knnDescr, y = solTrainY,
+                 method = "knn",
+                 preProc = c("center", "scale"),
+                 tuneGrid = data.frame(k = 1:20),
+                 trControl = ctrl)
+                 
+knnTune
+
+plot(knnTune)
+
+testResults$Knn <- predict(knnTune, solTestXtrans[, names(knnDescr)])
+
+```
+
+KNN can be powerfull is the response is highly **dependent on a local predictors structure**. However, it is **computationally demanding**. Removing irrelevant or noisy predictors can help improve the performance of KNN.
