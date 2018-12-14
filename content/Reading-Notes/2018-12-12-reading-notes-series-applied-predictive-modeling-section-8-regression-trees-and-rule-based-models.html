@@ -1,0 +1,234 @@
+---
+title: Reading Notes Series - Applied Predictive Modeling - Section 8 (Regression
+  Trees and Rule-Based Models - Part I)
+author: Laurent Barcelo
+date: '2018-12-12'
+slug: reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models
+categories:
+  - Reading Notes
+tags:
+  - trees
+  - CART
+  - Conditinal Inference Trees
+description: ''
+featured_image: ''
+---
+
+
+
+<p>This first series is related to M. Kuhn and K. Johnson book “Applied Predictive Modeling”. The book pdf is available <a href="https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf">here</a>, but if, like me, you prefer to have a paper copy of the book, you can purchase it <a href="https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&amp;qid=1540208647&amp;sr=8-1&amp;keywords=applied+predictive+modeling">here</a>. <strong>This post is dedicated to section 8 on regression trees and rules based models</strong> and as a <strong>part I, it is dealing with basic trees</strong>.</p>
+<p><img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/></p>
+<p>This chapter is a very important chapter of the book as it goes through <strong>basic trees, ensemble methods such as random forests, boosting and cubist</strong>. As someone who had little blackground in these techniques (beyond what is given in the DataCamp courses in the Machine Learning with R track), it is a quite difficult chapter to swallow (which is the reason why it is split in several parts in this blog).</p>
+<p><strong>Introduction</strong></p>
+<p>As its roots, a tree is a series of nested if-then statements. For example:</p>
+<p><code>if Predictor A &gt;= 1.7 then</code><br />
+<code>| if Predictor B &gt;= 202.1 then Outcome = 1.3</code><br />
+<code>| else Outcome = 5.6</code><br />
+<code>else Outcome = 2.5</code> `</p>
+<p>In this examples, there are <strong>2 splits</strong> (one on predictor A and one on predictor B) and <strong>3 terminal nodes</strong> (corresponding to the 3 outcomes). The terminal nodes can be either <strong>categorical</strong> (classification tree) or <strong>numeric</strong> (regression tree). They can also be a more complex equation than a single value. Each terminal node correspond to a specific <strong>rule</strong> which is the corresponding un-nested version of the if-then statement :</p>
+<p>rule 1: if Predictor A &gt;= 1.7 and Predictor B &gt;= 202.1 then Outcome = 1.3<br />
+rule 2: if Predictor A &gt;= 1.7 and Predictor B &lt; 202.1 then Outcome = 5.6<br />
+rule 3: if Predictor A &lt; 1.7 then Outcome = 2.5</p>
+<p>In the case where the predictors are numeric, the same predictor can be involved in several splits involving different threshold values.</p>
+<p>Trees are <strong>very popular</strong>. They are <strong>easy to interpret</strong> and they are <strong>easy to implement</strong>. They can handle different types of predictors (including sparse, skwewed, categorical…) <strong>without pre-treatment</strong>. There is no pre-conception of the form of the relation between Y and the Xi.</p>
+<p>However, trees are also <strong>prone to large instabilities</strong> (small changes in conditions can lead to radical changes in the trees). Also, Their <strong>prediction performance can be low</strong>. These two drawbacks led to the development of <strong>ensemble methods that consider multiple trees</strong> rather than a single one to predict a specific outcome.</p>
+<p><strong>Basic Regression Trees</strong></p>
+<p>In regression trees, we seek to <strong>split the predictors space into homogeneous pieces</strong> with regard to the response. The parameters of the trees are:</p>
+<ul>
+<li>The <strong>predictors to split on</strong> the the <strong>values</strong> on which to split;</li>
+<li>The tree <strong>depth</strong>;</li>
+<li>The <strong>prediction equation</strong> in the terminal nodes.</li>
+</ul>
+<p>For basic regression trees, <strong>the response is continuous</strong> and the prediction equation in the terminal nodes is <strong>a simple constant</strong>.</p>
+<p>One of the most popular version is these trees is called <strong>Classification and Regression Trees</strong> (<strong>CART</strong>). In the CART methodology, there is a <strong>growing step</strong> which is followed by a <strong>pruning step</strong>.</p>
+<p>In the growing step, the trees branches are determined according to <strong>recursive partitionning</strong>: for a dataset S, we <strong>scan every predictor and every possible split value</strong> in the predictors that split the datasets in two (<span class="math inline">\(S_1\)</span> and <span class="math inline">\(S_2\)</span>) in such a way that the sum of the square of the errors (See equation below) is minimized.</p>
+<p><span class="math display">\[\text{SSE} =  \sum_{i \in S_1}(y_i-\bar{y_1})^2 + \sum_{i \in S_2}(y_i-\bar{y_2})^2\]</span>
+This process continues for splitting <span class="math inline">\(S_1\)</span> and <span class="math inline">\(S_2\)</span> into smaller spaces. The growing step continues until we have reached a termination criteria such as maximum tree depth or minimum amount of samples in the terminal nodes.</p>
+<p>The authors provide an example, again with the now familiar case study dataset. For the solubility dataset, an example of split on the <code>Number of Carbon Atoms</code> variable is shown in the figure below. We can determine that the split that reduces the most the SSE is at 3.78… As this is the combination of predictor and split values that most reduces the SSE, we can derive the first split of the tree in this way:</p>
+<p><code>if Number of Carbon Atoms &gt;= 3.78 then Solubility = -4.49</code><br />
+<code>else Solubility = -1.84</code></p>
+<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/First%20split%20on%20solubility%20dataset.png" /></p>
+<p>The figure below shows the next steps in the tree growing. One branch of the tree involves a split on the <code>SurfaceArea2</code> variable, while the other one involves a split on the <code>MolWeight</code> variable.
+<img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/CART%20Tree%20growing%20step.png" /></p>
+<p>At the end of the growing step, the tree is likely to be <strong>very large</strong> and to <strong>overfit</strong> the response. This is what we want to address with the pruning step. This is done through a <strong>cost-complexity tuning</strong> that involves a version of the SSE <strong>penalized for the number of terminal nodes</strong>:</p>
+<p><span class="math display">\[ \text{SSE}_{c_p} = \text{SSE} + c_p.(\text{# terminal nodes})\]</span>
+where <span class="math inline">\(c_p\)</span> is a complexity parameter.</p>
+<p>For smaller values of <span class="math inline">\(c_p\)</span>, the trees are larger. In order to find the optimal value of <span class="math inline">\(c_p\)</span>, the parameter can tuned in a cross-validation procedure using a one-standard-error rule (see <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-4-over-fitting-and-model-tuning/">section 4</a>). Using this methodology, the authors determined that the optimal value of <span class="math inline">\(c_p\)</span> is 0.01 and the final tree has 11 terminal nodes and a RMSE of 1.05. An alternative would be to use the smallest possible cross-validated RMSE. This would lead in this example to a much larger tree (<span class="math inline">\(c_p = 0.003\)</span>, 25 terminal nodes) and a RMSE of 0.97.</p>
+<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/Final%20CART%20tree.png" /></p>
+<p>Once the tree is grown and pruned, we can determine the <strong>relative importance of the predictors</strong>. One approach is to keep track of what is the <strong>amount of reduction of SSE associated with each split</strong>. Intuitively, predictor splits that happens earlier in the growing process or predictor splits that occur multiple times in the tree correspond to larger importance. For the final tree, the authors have determined that the relative predictors importance is the following:</p>
+<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/CART%20predictors%20importance.png" /></p>
+<p>The advantage of trees, when their size remains reasonnable, is that there are <strong>simple and highly interpretable</strong>. Their <strong>computation is quick</strong>. They also lead to <strong>feature selection</strong> which is a great advantage when colinearity among predictors is not too high (otherwise the choice of a predictor over another one is somewhat random)… Colinearity can also dilute the parameter importance as it may involve 2 splits with 2 correlated predictors while 2 splits with a single predictors could be equivalent.</p>
+<p>On the other side, trees have disadvantages:</p>
+<ul>
+<li>because there are so simple, trees can have <strong>sub-optimal prediction performance</strong>. In this example, the final tree has 11 terminal nodes, which means that it only leads to 11 discrete values for the prediction of the response.</li>
+<li>as mentionned above, such trees can be highly <strong>unstable</strong>.</li>
+<li>CART trees are affected by a <strong>selection bias</strong>: predictors with more discrete values have a larger likelihood to be selected. In particular, this can be a problem when <em>noise variables</em> have more distinct values than <em>informative variables</em>. The variable importance graph abobe shows that continuous predictors tend to have a larger importance than binary predictors (FPxxx).</li>
+</ul>
+<p>There are <strong>several methodologies leading to unbiased trees</strong>. One possible approach called <strong>GUIDE</strong> decouples the choice of the predictor to split on (using a statistical hypoothesis) and the split value. Another approach is called <strong>Conditional inference trees</strong>. This general approach can be used for regression and also for classification. For each candidate split, a statistical test is performed to evaluate the difference between the 2 subgroups and a <strong>p-value</strong> is associated. This allows to compare splits for predictors that are on different scales. In this procedure, the predictors are increasingly penalized by the multiple comparisons when there are a large number of possible split values, reducing the selection bias. These conditional inference trees <strong>do not require a pruning step</strong>: when the number of samples in the nodes decrease, that statistical power decreases and the p-value tend to increase which prevents the tree from becoming too complex and overfit.</p>
+<p>Rather than fixing arbitrarily a p-value (i.e 0.05 for instance) and evaluating the corresponding conditional inference tree, the authors suggest that <strong>a better methodology is to tune the p-value</strong> according to the model performance. The following figure shows that tuned p-value woudl correspond to <span class="math inline">\(1-p = 0.853\)</span> and has a corresponding RMSE of 0.92. The corresponding tree has 32 terminal nodes, which is larger than the CART trees described above.</p>
+<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/p-value%20tuning%20for%20conditional%20inference%20trees.png" /></p>
+<p><strong>R code</strong></p>
+<p>The following code allows to <strong>build a CART tree of depth 2</strong> (using the <code>rpart</code> package) and to <strong>display it nicely</strong> (using the <code>partykit</code> package)</p>
+<pre class="r"><code>library(AppliedPredictiveModeling)
+data(solubility)
+
+# Constructing a tree of depth 2 and displaying it:
+library(rpart)
+trainData &lt;- solTrainXtrans
+trainData$y &lt;- solTrainY
+rpSmall &lt;- rpart(y ~ ., data = trainData, 
+                 control = rpart.control(maxdepth = 2))
+rpSmall</code></pre>
+<pre><code>## n= 951 
+## 
+## node), split, n, deviance, yval
+##       * denotes terminal node
+## 
+## 1) root 951 3979.3030 -2.718570  
+##   2) NumCarbon&gt;=3.776816 317 1114.2000 -4.485363  
+##     4) SurfaceArea2&lt; 0.9776982 74  173.0767 -6.867838 *
+##     5) SurfaceArea2&gt;=0.9776982 243  393.1730 -3.759835 *
+##   3) NumCarbon&lt; 3.776816 634 1380.8030 -1.835174  
+##     6) MolWeight&gt;=5.372821 104  173.9672 -3.328462 *
+##     7) MolWeight&lt; 5.372821 530  929.4181 -1.542151 *</code></pre>
+<pre class="r"><code>### Use the partykit package to make some nice plots. First, convert
+### the rpart objects to party objects.
+suppressMessages(library(partykit))
+rpSmallTree &lt;- as.party(rpSmall)
+plot(rpSmallTree)</code></pre>
+<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>The following code allows build an <strong>optimal CART tree by tuning the value of <span class="math inline">\(c_p\)</span></strong> using the <code>caret</code> package:</p>
+<pre class="r"><code>suppressMessages(library(caret))
+set.seed(100)
+indx &lt;- createFolds(solTrainY, returnTrain = TRUE)
+ctrl &lt;- trainControl(method = &quot;cv&quot;, index = indx)
+
+set.seed(100)
+cartTune &lt;- train(x = solTrainXtrans, y = solTrainY,
+                  method = &quot;rpart&quot;,
+                  tuneLength = 25,
+                  trControl = ctrl)</code></pre>
+<pre><code>## Warning in nominalTrainWorkflow(x = x, y = y, wts = weights, info =
+## trainInfo, : There were missing values in resampled performance measures.</code></pre>
+<pre class="r"><code>cartTune</code></pre>
+<pre><code>## CART 
+## 
+## 951 samples
+## 228 predictors
+## 
+## No pre-processing
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 856, 857, 855, 856, 856, 855, ... 
+## Resampling results across tuning parameters:
+## 
+##   cp           RMSE       Rsquared   MAE      
+##   0.002899268  0.9716246  0.7752447  0.7417986
+##   0.002992913  0.9660816  0.7779183  0.7402694
+##   0.003284296  0.9767689  0.7727573  0.7476064
+##   0.003560157  0.9864913  0.7681005  0.7541323
+##   0.003857172  0.9978151  0.7627426  0.7644085
+##   0.004007488  1.0005677  0.7614942  0.7646240
+##   0.004050192  1.0080565  0.7573802  0.7689005
+##   0.004224784  1.0154052  0.7534214  0.7759568
+##   0.004427556  1.0174706  0.7524694  0.7788088
+##   0.004737500  1.0196066  0.7514764  0.7814484
+##   0.005204160  1.0230892  0.7499148  0.7833565
+##   0.006181580  1.0207997  0.7495512  0.7822257
+##   0.006518655  1.0308117  0.7448964  0.7894475
+##   0.008288491  1.0464044  0.7369148  0.7939998
+##   0.008861298  1.0482274  0.7357991  0.7945821
+##   0.011501953  1.0951525  0.7125953  0.8446289
+##   0.011781343  1.1017983  0.7085687  0.8531951
+##   0.015535229  1.1218072  0.6972460  0.8782800
+##   0.017892740  1.1317681  0.6906429  0.8958119
+##   0.026503011  1.1747433  0.6680776  0.9321474
+##   0.047291114  1.2585476  0.6174856  0.9998940
+##   0.061802695  1.3197449  0.5802679  1.0501673
+##   0.069715098  1.4025314  0.5265519  1.1045590
+##   0.137700138  1.5373482  0.4375590  1.2118436
+##   0.373005064  1.9564323  0.2781173  1.5356942
+## 
+## RMSE was used to select the optimal model using the smallest value.
+## The final value used for the model was cp = 0.002992913.</code></pre>
+<pre class="r"><code>#displaying (but it is NOT very nice...)
+cartTree &lt;- as.party(cartTune$finalModel)
+plot(cartTree)</code></pre>
+<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code>#Variable importance
+cartImp &lt;- varImp(cartTune, scale = FALSE, competes = FALSE)
+cartImp</code></pre>
+<pre><code>## rpart variable importance
+## 
+##   only 20 most important variables shown (out of 228)
+## 
+##                   Overall
+## NumNonHBonds       0.9070
+## SurfaceArea2       0.7564
+## NumMultBonds       0.7453
+## NumCarbon          0.7257
+## MolWeight          0.6693
+## NumNonHAtoms       0.6093
+## NumBonds           0.5871
+## FP116              0.4788
+## NumOxygen          0.4706
+## NumRotBonds        0.3794
+## SurfaceArea1       0.3554
+## NumHydrogen        0.3522
+## FP081              0.2594
+## FP075              0.2435
+## FP077              0.1992
+## HydrophilicFactor  0.1164
+## FP182              0.0000
+## FP055              0.0000
+## FP106              0.0000
+## FP084              0.0000</code></pre>
+<pre class="r"><code># Saving predictions
+testResults &lt;- data.frame(obs = solTestY,
+                          CART = predict(cartTune, solTestXtrans))</code></pre>
+<p>The folliwing code allows to <strong>tune a conditional inference tree along a range of <span class="math inline">\(1-p\)</span> values</strong>:</p>
+<pre class="r"><code>### Tune the conditional inference tree
+cGrid &lt;- data.frame(mincriterion = sort(c(.95, seq(.75, .99, length = 15))))
+
+set.seed(100)
+ctreeTune &lt;- train(x = solTrainXtrans, y = solTrainY,
+                   method = &quot;ctree&quot;,
+                   tuneGrid = cGrid,
+                   trControl = ctrl)
+ctreeTune</code></pre>
+<pre><code>## Conditional Inference Tree 
+## 
+## 951 samples
+## 228 predictors
+## 
+## No pre-processing
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 856, 857, 855, 856, 856, 855, ... 
+## Resampling results across tuning parameters:
+## 
+##   mincriterion  RMSE       Rsquared   MAE      
+##   0.7500000     0.9269810  0.7903849  0.6909361
+##   0.7671429     0.9273600  0.7902285  0.6915097
+##   0.7842857     0.9261050  0.7905932  0.6916080
+##   0.8014286     0.9271195  0.7901073  0.6934781
+##   0.8185714     0.9288896  0.7896508  0.6942537
+##   0.8357143     0.9281676  0.7904168  0.6949394
+##   0.8528571     0.9230473  0.7925205  0.6906949
+##   0.8700000     0.9259664  0.7911380  0.6926482
+##   0.8871429     0.9306392  0.7892495  0.6965176
+##   0.9042857     0.9349456  0.7876931  0.6964407
+##   0.9214286     0.9358142  0.7867046  0.7010322
+##   0.9385714     0.9376111  0.7860495  0.7034747
+##   0.9500000     0.9403788  0.7847694  0.7051012
+##   0.9557143     0.9406871  0.7845855  0.7038880
+##   0.9728571     0.9556269  0.7772418  0.7189621
+##   0.9900000     0.9574527  0.7767184  0.7233734
+## 
+## RMSE was used to select the optimal model using the smallest value.
+## The final value used for the model was mincriterion = 0.8528571.</code></pre>
+<pre class="r"><code>plot(ctreeTune)</code></pre>
+<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>##ctreeTune$finalModel               
+plot(ctreeTune$finalModel) #as.party not possible here.</code></pre>
+<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/figure-html/unnamed-chunk-3-2.png" width="672" /></p>
+<pre class="r"><code>## saving prediction
+testResults$cTree &lt;- predict(ctreeTune, solTestXtrans)</code></pre>
