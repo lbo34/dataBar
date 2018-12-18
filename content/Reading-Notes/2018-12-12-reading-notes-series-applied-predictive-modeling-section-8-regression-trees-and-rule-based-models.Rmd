@@ -19,8 +19,8 @@ This first series is related to M. Kuhn and K. Johnson book "Applied Predictive 
 <img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
 
 This chapter is a very important chapter of the book as it goes through **basic trees, ensemble methods such as random forests, boosting and cubist**. As someone who had little blackground in these techniques (beyond what is given in the DataCamp courses in the Machine Learning with R track), it is a quite difficult chapter to swallow (which is the reason why it is split in several parts in this blog).
-
-
+</br>
+</br>
 **Introduction**
 
 As its roots, a tree is a series of nested if-then statements. For example:
@@ -41,8 +41,8 @@ In the case where the predictors are numeric, the same predictor can be involved
 Trees are **very popular**. They are **easy to interpret** and they are **easy to implement**. They can handle different types of predictors (including sparse, skwewed, categorical...) **without pre-treatment**. There is no pre-conception of the form of the relation between Y and the Xi.
 
 However, trees are also **prone to large instabilities** (small changes in conditions can lead to radical changes in the trees). Also, Their **prediction performance can be low**. These two drawbacks led to the development of **ensemble methods that consider multiple trees** rather than a single one to predict a specific outcome.
-
-
+</br>
+</br>
 **Basic Regression Trees**
 
 In regression trees, we seek to **split the predictors space into homogeneous pieces** with regard to the response. The parameters of the trees are:
@@ -97,8 +97,8 @@ There are **several methodologies leading to unbiased trees**. One possible appr
 Rather than fixing arbitrarily a p-value (i.e 0.05 for instance) and evaluating the corresponding conditional inference tree, the authors suggest that **a better methodology is to tune the p-value** according to the model performance. The following figure shows that tuned p-value woudl correspond to $1-p = 0.853$ and has a corresponding RMSE of 0.92. The corresponding tree has 32 terminal nodes, which is larger than the CART trees described above.
 
 ![](/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/p-value tuning for conditional inference trees.png)
-
-
+</br>
+</br>
 **R code**
 
 The following code allows to **build a CART tree of depth 2** (using the `rpart` package) and to **display it nicely** (using the `partykit` package)

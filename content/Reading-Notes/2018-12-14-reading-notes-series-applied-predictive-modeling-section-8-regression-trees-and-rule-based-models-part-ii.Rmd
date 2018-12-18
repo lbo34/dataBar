@@ -1,0 +1,105 @@
+---
+title: Reading Notes Series - Applied Predictive Modeling - Section 8 (Regression   Trees
+  and Rule-Based Models - Part II)
+author: Laurent Barcelo
+date: '2018-12-14'
+slug: reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-ii
+categories:
+  - Reading Notes
+tags:
+  - regression trees
+description: ''
+featured_image: ''
+---
+
+This first series is related to M. Kuhn and K. Johnson book "Applied Predictive Modeling". The book pdf is available [here](https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf), but if, like me, you prefer to have a paper copy of the book, you can purchase it [here](https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&qid=1540208647&sr=8-1&keywords=applied+predictive+modeling). **This post is dedicated to section 8 on regression trees and rules based models** and as a **part II, it is dealing with regression model trees**.
+
+<img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
+</br>
+</br> 
+**Regression model trees**
+
+This post is the continuation of the summary of chapter 8 on regression trees and rule based models. [Part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models/) was dedicated to basic trees (including CART trees and conditional inference trees). This part II focuses on regression model trees, **where the terminal nodes do not hold a single value, but a linear model**. 
+
+The approach for regression model trees that is developed in the book is called **"M5"** and intially included in the Weka softare. Compared to basic regression trees:
+
+* the **splitting criterion** is different;
+* the value in the terminal nodes is a **linear model** and not a single value;
+* the prediction for a given sample is generally not only the prediction given by the linear model in the given terminal node, but instead **a combination of several predictions from models along the tree path**.
+
+Instead of using SSE criteria for the split, the M5 algorithm seeks to **maximize the reduction of standard deviation after the splits**:
+
+$$\text{reduction} = \text{SD}(S) - \sum_{i=1}^{P}\frac{n_i}{n}\text{SD}(S_i) $$
+At each split, the algorithm chooses the variable $X_i$ that most increases the reduction of SD and **a linear model is built with this same variable**. For the next iterations, the error associated with the linear model is used instead of $\text{SD}(S_i)$. At then end of the growing step, the tree contains linear models in each terminal nodes. In each node, **the linear model contains all the predictors involved in the parent splits**.
+
+After the tree is fully grown, each model undergoes a **simplification procedure by dropping some predictors**. For this, an **Adjusted Error Rate** which penalizes the models with more predictors is calculated:
+
+$$\text{Adjusted Error Rate} = \frac{n^*+p}{n^*-p}\sum_{i=1}^{n^*}|y_i-\hat{y_i}| $$ with $n^*$ being the number of observations used to buid the model and `p` the number of parameters. For each model, **terms are dropped as long as the Adjusted Error Rate decreases**.
+
+The algorithm then introduces a **"recursive shrinking"** methodology in order to **reduce potential overfitting**: a given prediction for a specific sample combines the predictions from the models along the tree path starting from the terminal node using the following equation:
+
+$$\hat{y}_{(p)} = \frac{n_{(k)}\hat{y}_{(k)}+c\hat{y}_{(p)}}{n_{(k)}+c} $$ where $y_{(p)}$ is the prediction from the parent node, $y_{(k)}$ the prediction from the child node, $n_{(k)}$ the number of samples in the child node (training dataset) and `c` a constant ususally set to 15. When the new prediction for the parent node is obtained, the recursive shrinking continues up to the top of the tree.
+
+Once the tree is fully growned, it is **pruned**, starting from the terminal nodes using the adjusted error rate.
+The following R code allows to tune a M5 model tree using the dolubility case study data.
+
+```{r eval = FALSE}
+library(AppliedPredictiveModeling)
+data(solubility)
+
+### Create a control function that will be used across models. We
+### create the fold assignments explicitly instead of relying on the
+### random number seed being set to identical values.
+
+suppressMessages(library(caret))
+set.seed(100)
+indx <- createFolds(solTrainY, returnTrain = TRUE)
+ctrl <- trainControl(method = "cv", index = indx)
+
+library(RWeka)
+
+set.seed(100)
+m5Tune <- train(x = solTrainXtrans, y = solTrainY,
+                method = "M5",
+                trControl = ctrl,
+                control = Weka_control(M = 10)) 
+# M=10 raises the minimum number of observations to produce additional split from 4 to 10
+
+m5Tune
+plot(m5Tune)
+
+m5Tune$finalModel
+plot(m5Tune$finalModel)
+
+```
+
+The call `plot(m5Tune)` produces the following plot:
+
+![](/Reading-Notes/2018-12-14-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-ii_files/M5 model.png)
+
+The plot on the left is for Rules based models (following section). The plot on the right is for regression model trees. The plot displays RMSEs for smoothed / unsmoothed and pruned / unpruned models. In this case, if the model is smoothed, pruning does not improve the model performance.
+
+As it is the case for basic regression trees, the authors point out that **regression model trees tend to favor continuous predictors**. Also, regression trees are affected by predictors colinearity which can make interpretation more difficult. **Smoothing has the effect of minimizing colinearity issues**. In the present case, though, the model performance seems to be ok. 
+</br>
+</br>
+</br>
+**Rule-based models**
+
+As mentioned in [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models/), each node can be defined by a rule written from the if-then statetments. The authors define the **coverage** of a rule as the number of samples it concerns.
+
+After the pruning step in the regression model tree algorithm (previous section), **further simplification can be performed** by either simplifying rules (removing some conditions in rules) or by removing some rules entirely.
+
+In some cases, rules can be simplified withouth modifying the outcome. This is the case for instance when there a successive splits on the same predictor using different threshold values. 
+
+One **proposed approach to create rule-based model tree** is an interative approach where:
+
+* The first model tree is built (without smoothing). Only the rule with the largest coverage is kept and the corresponding samples are removed from the training dataset;
+* a second model tree is built and the same process is applied;
+* this goes on until all samples are covered by a rule.
+
+The left plot of the figure above corresponds to the rule-based model. When pruning is applied, its performance is similar to the regression model tree.
+
+
+
+  
+
