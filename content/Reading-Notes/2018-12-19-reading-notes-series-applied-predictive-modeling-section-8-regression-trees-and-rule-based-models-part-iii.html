@@ -83,8 +83,8 @@ plot(varImp(treebagTune), top=25)</code></pre>
 </br>
 </br>
 </br>
-<strong>Random Forests</strong>
-Although it reduces variance, <strong>bagging has somewhat limited effects</strong> as trees all originate from the <strong>same sample base</strong>… that makes that, in spite of instability, trees originating from bagging are <strong>correlated</strong> and this prevents bagging from further reducing variance.</p>
+<strong>Random Forests</strong></p>
+<p>Although it reduces variance, <strong>bagging has somewhat limited effects</strong> as trees all originate from the <strong>same sample base</strong>… that makes that, in spite of instability, trees originating from bagging are <strong>correlated</strong> and this prevents bagging from further reducing variance.</p>
 <p>One way to improve this is to reduce tree correlations by <strong>adding randomness</strong> in the trees contruction process.
 The algorithm used for random forests is illustrated below. It starts in the same way as bagging by the selection of a bootstrap sample. However, the difference happens in the tree building phase: for <strong>each split</strong>, the algorithm does not consider all the <code>P</code> predictors but <strong>a smaller subset of size <code>k</code> taken randomly</strong>.</p>
 <p><img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/Random%20Forests%20Algorithm.png" /></p>

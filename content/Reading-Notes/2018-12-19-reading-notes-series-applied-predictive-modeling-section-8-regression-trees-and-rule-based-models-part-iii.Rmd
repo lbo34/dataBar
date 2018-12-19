@@ -81,6 +81,7 @@ plot(varImp(treebagTune), top=25)
 </br>
 </br> 
 **Random Forests**
+
 Although it reduces variance, **bagging has somewhat limited effects** as trees all originate from the **same sample base**... that makes that, in spite of instability, trees originating from bagging are **correlated** and this prevents bagging from further reducing variance.
 
 One way to improve this is to reduce tree correlations by **adding randomness** in the trees contruction process. 
