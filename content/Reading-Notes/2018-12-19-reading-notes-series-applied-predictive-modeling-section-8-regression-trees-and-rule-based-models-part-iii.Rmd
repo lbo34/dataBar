@@ -1,0 +1,135 @@
+---
+title: Reading Notes Series - Applied Predictive Modeling - Section 8 (Regression   Trees   and
+  Rule-Based Models - Part III)
+author: Laurent Barcelo
+date: '2018-12-19'
+slug: reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii
+categories:
+  - Reading Notes
+tags:
+  - bagging
+  - boosting
+  - random forests
+description: ''
+featured_image: ''
+---
+
+This first series is related to M. Kuhn and K. Johnson book "Applied Predictive Modeling". The book pdf is available [here](https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf), but if, like me, you prefer to have a paper copy of the book, you can purchase it [here](https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&qid=1540208647&sr=8-1&keywords=applied+predictive+modeling). **This post is dedicated to section 8 on regression trees and rules based models** and as a **part III, it is dealing with ensemble methods: bagging and random forests**.
+
+<img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
+</br>
+</br> 
+**Bagging**
+
+As discussed in [part I](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models/), one of the drawback of regression trees is their **instability** which translates into **high variance**. One way to reduce the variance is to **average the predictions from different trees built from bootstrap samples** taken from the training samples. This general procedure is known as **b**oostrap **agg**regation or **bagging**. It works better for methods that have a high variance (ex: regression trees) vs. methods that have a lower variance such as MARS... However, the authors point-out (see figure below) that on the solubility dataset, bagging MARS models does significantly reduce the RMSE, which is **NOT a typical result**... a more typical result is the behavior observed for the concrete dataset where reduction of RMSE for Tree models is larger when bagging than it is for more stable methods such as MARS.
+
+![](/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/RMSE reduction through bagging.png)
+
+In addition to variance reduction, bagging also provides the advantage of producing an **estimate of model performance** (by estimating the error on the out-of-bag samples) similar to cross-validation. This estimate is generally referres as **out-of-bag estimate (OOB)**.
+
+In practice, when bagging models, the only parameter is the **number of bootstrap samples to aggregate `m`**. Generally, there is an exponential decrease in the performance and, as shown in the figure below, a large part of the improvement is obtained with a **small number of trees (`m<10`)**.
+
+![](/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/RMSE and number of boostrap samples.png)
+
+Bagging has drawbacks, one of them is **computation time and memory requirements** which increase as `m` increases. However, as boostrap samples are independant from each other, bagging can be **easily parallelized**. Also. bagged models are **more difficult to interpret**: there are no more clear rules that can be used. However, variance importance can be assessed.
+
+The following code corresponds to a bagging with `m=25`. In order to speed the process, the calculation is parallelized using the `doMC` package.
+
+```{r}
+library(AppliedPredictiveModeling)
+data(solubility)
+
+### Create a control function that will be used across models. We
+### create the fold assignments explicitly instead of relying on the
+### random number seed being set to identical values.
+
+suppressMessages(library(caret))
+set.seed(100)
+indx <- createFolds(solTrainY, returnTrain = TRUE)
+ctrl <- trainControl(method = "cv", index = indx)
+
+### Optional: parallel processing can be used via the 'do' packages,
+### such as doMC, doMPI etc. We used doMC (not on Windows) to speed
+### up the computations.
+
+### WARNING: Be aware of how much memory is needed to parallel
+### process. It can very quickly overwhelm the available hardware. The
+### estimate of the median memory usage (VSIZE = total memory size) 
+### was 9706M for a core, but could range up to 9706M. This becomes 
+### severe when parallelizing randomForest() and (especially) calls 
+### to cforest(). 
+
+### WARNING 2: The RWeka package does not work well with some forms of
+### parallel processing, such as mutlicore (i.e. doMC).
+
+suppressMessages(library(doMC))
+registerDoMC(4)
+
+set.seed(100)
+
+treebagTune <- train(x = solTrainXtrans, y = solTrainY,
+                     method = "treebag",
+                     nbagg = 25,
+                     trControl = ctrl)
+
+treebagTune
+
+#Variable importance
+plot(varImp(treebagTune), top=25)
+```
+</br>
+</br>
+</br> 
+**Random Forests**
+Although it reduces variance, **bagging has somewhat limited effects** as trees all originate from the **same sample base**... that makes that, in spite of instability, trees originating from bagging are **correlated** and this prevents bagging from further reducing variance.
+
+One way to improve this is to reduce tree correlations by **adding randomness** in the trees contruction process. 
+The algorithm used for random forests is illustrated below. It starts in the same way as bagging by the selection of a bootstrap sample. However, the difference happens in the tree building phase: for **each split**, the algorithm does not consider all the `P` predictors but **a smaller subset of size `k` taken randomly**.
+
+![](/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/Random Forests Algorithm.png)
+
+In practice, there a **2 parameters** in random forests:
+
+* The **size of the predictors subset `k`** is often referred as $m_{try}$. A suggested value is $P/3$. However, this parameter can be tuned. As it is computationnaly intensive to do so, the authors suggest 5 values of k evenly spaced between `2` and `P`.
+* The **number of trees `m`** to average. As random forests are **protected from overfitting**, there is no harm in taking large numbers of trees. However, this is limited by computation time. The authors suggest to start with 1000 trees and to increase the number if performance continues increasing with the amount of trees.
+
+Random forests can be done with **CART trees** or with **conditional inference trees**. The following code trains a CART based random forest using **cross validation**. Conditional inference trees can be used by specifying `method = "cforest"` instead of `method = "rf"` in the `train()` function. In that case, the `ntree` argument is replaced by `controls = cforest_unbiased(ntree = 1000)`.
+
+Training can also be done using **OOB estimates**. This **reduces drastically computation time**.
+
+```{r eval = FALSE}
+mtryGrid <- data.frame(mtry = floor(seq(10, ncol(solTrainXtrans), length = 10)))
+### Tune the model using cross-validation
+set.seed(100)
+rfTune <- train(x = solTrainXtrans, y = solTrainY,
+                method = "rf",
+                tuneGrid = mtryGrid,
+                ntree = 1000,
+                importance = TRUE,
+                trControl = ctrl)
+rfTune
+
+
+
+### Tune the model using the OOB estimates
+ctrlOOB <- trainControl(method = "oob")
+set.seed(100)
+rfTuneOOB <- train(x = solTrainXtrans, y = solTrainY,
+                   method = "rf",
+                   tuneGrid = mtryGrid,
+                   ntree = 1000,
+                   importance = TRUE,
+                   trControl = ctrlOOB)
+rfTuneOOB
+
+#plotting
+plot(rfTune)
+plot(rfTuneOOB)
+
+plot(varImp(rfTune), top = 25)
+plot(varImp(rfTuneOOB), top = 25)
+```
+
+The following figure compares the different random forest "flavors". In the case study dataset, the CART based random forest provides the best performance and in this case, the OOB RMSE estimate and cross-validation estimate are almost identical.
+
+![](/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/RF RMSE CV and OOB.png)
