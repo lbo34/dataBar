@@ -1,0 +1,29 @@
+---
+title: Reading Notes Series - Applied Predictive Modeling - Section 8 (Regression   Trees   and   Rule-Based
+  Models - Part IV (final)
+author: Laurent Barcelo
+date: '2018-12-19'
+slug: reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iv-final
+categories:
+  - Reading Notes
+tags:
+  - boosting
+  - cubist
+description: ''
+featured_image: ''
+---
+
+
+
+<p>This first series is related to M. Kuhn and K. Johnson book “Applied Predictive Modeling”. The book pdf is available <a href="https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf">here</a>, but if, like me, you prefer to have a paper copy of the book, you can purchase it <a href="https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&amp;qid=1540208647&amp;sr=8-1&amp;keywords=applied+predictive+modeling">here</a>. <strong>This post is dedicated to section 8 on regression trees and rules based models</strong> and as a <strong>part IV concludes chapter 8. It is dealing with ensemble methods: boosting and cubist models</strong>.</p>
+<p><img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
+</br>
+</br>
+<strong>Boosting</strong></p>
+<p>Boosting was first developped for classification problems and later on extender to regression. It started with a specific algorithm called <strong>AdaBoost</strong> which was later refined and was generalized into a method called <strong>gradient boosting machines (GBM)</strong> which covers both classification and regression problems.</p>
+<p>Mathematically, it can be defined as a forward stagewise additive model that minimizes exponential loss. Compared to the other ensemble methods defined in <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii/">part III</a>, trees are not built independently (or in parallel) then averaged. Boosting is a <strong>sequential process</strong> where the following tree depends on the prediction given by the previous ones. The general idea of the AdaBoost algorith was to put more “weight” to samples that had been misclassified in previous iterations, so the likelihood to find a better prediction for them in subsequent trees increases. In regression, the trees are fit on the <strong>residuals from the previous trees</strong>.</p>
+<p>Boosting can be done with <strong>any loss function</strong> and a <strong>weak learner</strong>. Trees are very interesting in this context are they can be turned into a <strong>weak learner by limiting their depth</strong>,. they can be <strong>aggregated easily</strong> and they are <strong>fast</strong> to implement.</p>
+<p>Boosting with trees takes <strong>two paramemeters</strong>: the tree depth <code>D</code> and the number of iterations <code>K</code>. The general algorithm is the following:</p>
+<p><img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iv-final_files/Boosting%20algorithm.png" /></p>
+<p>Because of the iterative aspect, boosting cannot be parallelized as random forests can be, so boosting is generally requires more computation time. boosting is also prone to <strong>overfitting</strong>. One way to regularize it is to only take a fraction <span class="math inline">\(\lambda\)</span> of the new prediction at each step. <span class="math inline">\(\lambda\)</span> is called the <strong>learning rate</strong>. If small values of <span class="math inline">\(\lambda\)</span> generally works best (such as <span class="math inline">\(\lambda&lt;0.01\)</span>), it also increases computation time as the alorithm requires more iterations.</p>
+<p>After the GBM was defined, an updated version called <strong>stochastic gradient boosting</strong> was proposed. It was inspired from the random selection of samples in the bagging technique. The change in the algorithm is the following: in the loop, at each iteration, only a fraction of the training data is considered. This fraction is called the <strong>bagging fraction</strong>. Values around 0.5 are suggested, but it can also be tuned during the model training.</p>

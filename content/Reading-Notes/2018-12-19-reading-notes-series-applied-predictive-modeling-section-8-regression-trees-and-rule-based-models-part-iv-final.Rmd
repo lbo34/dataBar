@@ -1,0 +1,78 @@
+---
+title: Reading Notes Series - Applied Predictive Modeling - Section 8 (Regression   Trees   and   Rule-Based
+  Models - Part IV (final)
+author: Laurent Barcelo
+date: '2018-12-19'
+slug: reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iv-final
+categories:
+  - Reading Notes
+tags:
+  - boosting
+  - cubist
+description: ''
+featured_image: ''
+---
+
+This first series is related to M. Kuhn and K. Johnson book "Applied Predictive Modeling". The book pdf is available [here](https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf), but if, like me, you prefer to have a paper copy of the book, you can purchase it [here](https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&qid=1540208647&sr=8-1&keywords=applied+predictive+modeling). **This post is dedicated to section 8 on regression trees and rules based models** and as a **part IV concludes chapter 8. It is dealing with ensemble methods: boosting and cubist models**.
+
+<img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
+</br>
+</br> 
+**Boosting**
+
+Boosting was first developped for classification problems and later on extender to regression. It started with a specific algorithm called **AdaBoost** which was later refined and was generalized into a method called **gradient boosting machines (GBM)** which covers both classification and regression problems.
+
+Mathematically, it can be defined as a forward stagewise additive model that minimizes exponential loss. Compared to the other ensemble methods defined in [part III](https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii/), trees are not built independently (or in parallel) then averaged. Boosting is a **sequential process** where the following tree depends on the prediction given by the previous ones. The general idea of the AdaBoost algorith was to put more "weight" to samples that had been misclassified in previous iterations, so the likelihood to find a better prediction for them in subsequent trees increases. In regression, the trees are fit on the **residuals from the previous trees**. 
+
+Boosting can be done with **any loss function** and a **weak learner**. Trees are very interesting in this context are they can be turned into a **weak learner by limiting their depth**,. they can be **aggregated easily** and they are **fast** to implement.
+
+Boosting with trees takes **two paramemeters**: the tree depth `D` and the number of iterations `K`. The general algorithm is the following:
+
+![](/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iv-final_files/Boosting algorithm.png)
+
+Because of the iterative aspect, boosting cannot be parallelized as random forests can be, so boosting is generally requires more computation time. boosting is also prone to **overfitting**. One way to regularize it is to only take a fraction $\lambda$ of the new prediction at each step. $\lambda$ is called the **learning rate**. If small values of $\lambda$ generally works best (such as $\lambda<0.01$), it also increases computation time as the alorithm requires more iterations.
+
+After the GBM was defined, an updated version called **stochastic gradient boosting** was proposed. It was inspired from the random selection of samples in the bagging technique. The change in the algorithm is the following: in the loop, at each iteration, only a fraction of the training data is considered. This fraction is called the **bagging fraction**. Values around 0.5 are suggested, but it can also be tuned during the model training.
+
+The following code allows to tune the tree depth (from 1 to 7), $\lambda$ and the numbers of iterations K. The bagging fraction is by default 0.5. The code also displays variable importance for the top 25 variables.
+
+The authors mention that the steeper importance curve compared to random forests originates from the fact that in boosting, the trees are dependant from each other.
+
+```{r}
+library(AppliedPredictiveModeling)
+data(solubility)
+
+### Create a control function that will be used across models. We
+### create the fold assignments explicitly instead of relying on the
+### random number seed being set to identical values.
+
+suppressMessages(library(caret))
+set.seed(100)
+indx <- createFolds(solTrainY, returnTrain = TRUE)
+ctrl <- trainControl(method = "cv", index = indx)
+
+
+##Boosting model
+gbmGrid <- expand.grid(interaction.depth = seq(1, 7, by = 2),
+                       n.trees = seq(100, 1000, by = 50),
+                       shrinkage = c(0.01, 0.1),
+                       n.minobsinnode=10)
+set.seed(100)
+gbmTune <- train(x = solTrainXtrans, y = solTrainY,
+                 method = "gbm",
+                 tuneGrid = gbmGrid,
+                 trControl = ctrl,
+                 verbose = FALSE)
+gbmTune
+
+plot(gbmTune, auto.key = list(columns = 4, lines = TRUE))
+
+gbmImp <- varImp(gbmTune, scale = FALSE)
+plot(gbmImp, top = 25)
+```
+</br>
+</br>
+</br>
+**Cubist**
+
+Cubist is a rule based model that was originally proposed in a commercial software but has since been released under open license. It is not developped in the summary post.
