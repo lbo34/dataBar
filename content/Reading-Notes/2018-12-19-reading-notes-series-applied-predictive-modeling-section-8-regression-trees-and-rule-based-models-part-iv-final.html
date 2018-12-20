@@ -27,3 +27,40 @@ featured_image: ''
 <p><img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iv-final_files/Boosting%20algorithm.png" /></p>
 <p>Because of the iterative aspect, boosting cannot be parallelized as random forests can be, so boosting is generally requires more computation time. boosting is also prone to <strong>overfitting</strong>. One way to regularize it is to only take a fraction <span class="math inline">\(\lambda\)</span> of the new prediction at each step. <span class="math inline">\(\lambda\)</span> is called the <strong>learning rate</strong>. If small values of <span class="math inline">\(\lambda\)</span> generally works best (such as <span class="math inline">\(\lambda&lt;0.01\)</span>), it also increases computation time as the alorithm requires more iterations.</p>
 <p>After the GBM was defined, an updated version called <strong>stochastic gradient boosting</strong> was proposed. It was inspired from the random selection of samples in the bagging technique. The change in the algorithm is the following: in the loop, at each iteration, only a fraction of the training data is considered. This fraction is called the <strong>bagging fraction</strong>. Values around 0.5 are suggested, but it can also be tuned during the model training.</p>
+<p>The following code allows to tune the tree depth (from 1 to 7), <span class="math inline">\(\lambda\)</span> and the numbers of iterations K. The bagging fraction is by default 0.5. The code also displays variable importance for the top 25 variables.</p>
+<p>The authors mention that the steeper importance curve compared to random forests originates from the fact that in boosting, the trees are dependant from each other.</p>
+<pre class="r"><code>library(AppliedPredictiveModeling)
+data(solubility)
+
+### Create a control function that will be used across models. We
+### create the fold assignments explicitly instead of relying on the
+### random number seed being set to identical values.
+
+suppressMessages(library(caret))
+set.seed(100)
+indx &lt;- createFolds(solTrainY, returnTrain = TRUE)
+ctrl &lt;- trainControl(method = &quot;cv&quot;, index = indx)
+
+
+##Boosting model
+gbmGrid &lt;- expand.grid(interaction.depth = seq(1, 7, by = 2),
+                       n.trees = seq(100, 1000, by = 50),
+                       shrinkage = c(0.01, 0.1),
+                       n.minobsinnode=10)
+set.seed(100)
+gbmTune &lt;- train(x = solTrainXtrans, y = solTrainY,
+                 method = &quot;gbm&quot;,
+                 tuneGrid = gbmGrid,
+                 trControl = ctrl,
+                 verbose = FALSE)
+gbmTune
+
+plot(gbmTune, auto.key = list(columns = 4, lines = TRUE))
+
+gbmImp &lt;- varImp(gbmTune, scale = FALSE)
+plot(gbmImp, top = 25)</code></pre>
+<p></br>
+</br>
+</br>
+<strong>Cubist</strong></p>
+<p>Cubist is a rule based model that was originally proposed in a commercial software but has since been released under open license. It is not developped in the summary post.</p>

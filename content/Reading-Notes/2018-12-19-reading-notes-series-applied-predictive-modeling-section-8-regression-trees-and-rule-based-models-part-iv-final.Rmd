@@ -38,7 +38,7 @@ The following code allows to tune the tree depth (from 1 to 7), $\lambda$ and th
 
 The authors mention that the steeper importance curve compared to random forests originates from the fact that in boosting, the trees are dependant from each other.
 
-```{r}
+```{r eval=FALSE}
 library(AppliedPredictiveModeling)
 data(solubility)
 
