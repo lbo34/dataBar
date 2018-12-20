@@ -18,10 +18,7 @@ featured_image: ''
 
 <p>This first series is related to M. Kuhn and K. Johnson book “Applied Predictive Modeling”. The book pdf is available <a href="https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf">here</a>, but if, like me, you prefer to have a paper copy of the book, you can purchase it <a href="https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&amp;qid=1540208647&amp;sr=8-1&amp;keywords=applied+predictive+modeling">here</a>. <strong>This post is dedicated to section 8 on regression trees and rules based models</strong> and as a <strong>part I, it is dealing with basic trees</strong>.</p>
 <p><img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/></p>
-<p>This chapter is a very important chapter of the book as it goes through <strong>basic trees, ensemble methods such as random forests, boosting and cubist</strong>. As someone who had little blackground in these techniques (beyond what is given in the DataCamp courses in the Machine Learning with R track), it is a quite difficult chapter to swallow (which is the reason why it is split in several parts in this blog).
-</br>
-</br>
-<strong>Introduction</strong></p>
+<p>This chapter is a very important chapter of the book as it goes through <strong>basic trees, ensemble methods such as random forests, boosting and cubist</strong>. As someone who had little blackground in these techniques (beyond what is given in the DataCamp courses in the Machine Learning with R track), it is a quite difficult chapter to swallow (which is the reason why it is split in several parts in this blog). </br> </br> <strong>Introduction</strong></p>
 <p>As its roots, a tree is a series of nested if-then statements. For example:</p>
 <p><code>if Predictor A &gt;= 1.7 then</code><br />
 <code>| if Predictor B &gt;= 202.1 then Outcome = 1.3</code><br />
@@ -33,10 +30,7 @@ rule 2: if Predictor A &gt;= 1.7 and Predictor B &lt; 202.1 then Outcome = 5.6<b
 rule 3: if Predictor A &lt; 1.7 then Outcome = 2.5</p>
 <p>In the case where the predictors are numeric, the same predictor can be involved in several splits involving different threshold values.</p>
 <p>Trees are <strong>very popular</strong>. They are <strong>easy to interpret</strong> and they are <strong>easy to implement</strong>. They can handle different types of predictors (including sparse, skwewed, categorical…) <strong>without pre-treatment</strong>. There is no pre-conception of the form of the relation between Y and the Xi.</p>
-<p>However, trees are also <strong>prone to large instabilities</strong> (small changes in conditions can lead to radical changes in the trees). Also, Their <strong>prediction performance can be low</strong>. These two drawbacks led to the development of <strong>ensemble methods that consider multiple trees</strong> rather than a single one to predict a specific outcome.
-</br>
-</br>
-<strong>Basic Regression Trees</strong></p>
+<p>However, trees are also <strong>prone to large instabilities</strong> (small changes in conditions can lead to radical changes in the trees). Also, Their <strong>prediction performance can be low</strong>. These two drawbacks led to the development of <strong>ensemble methods that consider multiple trees</strong> rather than a single one to predict a specific outcome. </br> </br> <strong>Basic Regression Trees</strong></p>
 <p>In regression trees, we seek to <strong>split the predictors space into homogeneous pieces</strong> with regard to the response. The parameters of the trees are:</p>
 <ul>
 <li>The <strong>predictors to split on</strong> the the <strong>values</strong> on which to split;</li>
@@ -46,21 +40,27 @@ rule 3: if Predictor A &lt; 1.7 then Outcome = 2.5</p>
 <p>For basic regression trees, <strong>the response is continuous</strong> and the prediction equation in the terminal nodes is <strong>a simple constant</strong>.</p>
 <p>One of the most popular version is these trees is called <strong>Classification and Regression Trees</strong> (<strong>CART</strong>). In the CART methodology, there is a <strong>growing step</strong> which is followed by a <strong>pruning step</strong>.</p>
 <p>In the growing step, the trees branches are determined according to <strong>recursive partitionning</strong>: for a dataset S, we <strong>scan every predictor and every possible split value</strong> in the predictors that split the datasets in two (<span class="math inline">\(S_1\)</span> and <span class="math inline">\(S_2\)</span>) in such a way that the sum of the square of the errors (See equation below) is minimized.</p>
-<p><span class="math display">\[\text{SSE} =  \sum_{i \in S_1}(y_i-\bar{y_1})^2 + \sum_{i \in S_2}(y_i-\bar{y_2})^2\]</span>
-This process continues for splitting <span class="math inline">\(S_1\)</span> and <span class="math inline">\(S_2\)</span> into smaller spaces. The growing step continues until we have reached a termination criteria such as maximum tree depth or minimum amount of samples in the terminal nodes.</p>
+<p><span class="math display">\[\text{SSE} =  \sum_{i \in S_1}(y_i-\bar{y_1})^2 + \sum_{i \in S_2}(y_i-\bar{y_2})^2\]</span> This process continues for splitting <span class="math inline">\(S_1\)</span> and <span class="math inline">\(S_2\)</span> into smaller spaces. The growing step continues until we have reached a termination criteria such as maximum tree depth or minimum amount of samples in the terminal nodes.</p>
 <p>The authors provide an example, again with the now familiar case study dataset. For the solubility dataset, an example of split on the <code>Number of Carbon Atoms</code> variable is shown in the figure below. We can determine that the split that reduces the most the SSE is at 3.78… As this is the combination of predictor and split values that most reduces the SSE, we can derive the first split of the tree in this way:</p>
 <p><code>if Number of Carbon Atoms &gt;= 3.78 then Solubility = -4.49</code><br />
 <code>else Solubility = -1.84</code></p>
-<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/First%20split%20on%20solubility%20dataset.png" /></p>
-<p>The figure below shows the next steps in the tree growing. One branch of the tree involves a split on the <code>SurfaceArea2</code> variable, while the other one involves a split on the <code>MolWeight</code> variable.
-<img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/CART%20Tree%20growing%20step.png" /></p>
+<div class="figure">
+<img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/First%20split%20on%20solubility%20dataset.png" />
+
+</div>
+<p>The figure below shows the next steps in the tree growing. One branch of the tree involves a split on the <code>SurfaceArea2</code> variable, while the other one involves a split on the <code>MolWeight</code> variable. <img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/CART%20Tree%20growing%20step.png" /></p>
 <p>At the end of the growing step, the tree is likely to be <strong>very large</strong> and to <strong>overfit</strong> the response. This is what we want to address with the pruning step. This is done through a <strong>cost-complexity tuning</strong> that involves a version of the SSE <strong>penalized for the number of terminal nodes</strong>:</p>
-<p><span class="math display">\[ \text{SSE}_{c_p} = \text{SSE} + c_p.(\text{# terminal nodes})\]</span>
-where <span class="math inline">\(c_p\)</span> is a complexity parameter.</p>
+<p><span class="math display">\[ \text{SSE}_{c_p} = \text{SSE} + c_p.(\text{# terminal nodes})\]</span> where <span class="math inline">\(c_p\)</span> is a complexity parameter.</p>
 <p>For smaller values of <span class="math inline">\(c_p\)</span>, the trees are larger. In order to find the optimal value of <span class="math inline">\(c_p\)</span>, the parameter can tuned in a cross-validation procedure using a one-standard-error rule (see <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-4-over-fitting-and-model-tuning/">section 4</a>). Using this methodology, the authors determined that the optimal value of <span class="math inline">\(c_p\)</span> is 0.01 and the final tree has 11 terminal nodes and a RMSE of 1.05. An alternative would be to use the smallest possible cross-validated RMSE. This would lead in this example to a much larger tree (<span class="math inline">\(c_p = 0.003\)</span>, 25 terminal nodes) and a RMSE of 0.97.</p>
-<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/Final%20CART%20tree.png" /></p>
+<div class="figure">
+<img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/Final%20CART%20tree.png" />
+
+</div>
 <p>Once the tree is grown and pruned, we can determine the <strong>relative importance of the predictors</strong>. One approach is to keep track of what is the <strong>amount of reduction of SSE associated with each split</strong>. Intuitively, predictor splits that happens earlier in the growing process or predictor splits that occur multiple times in the tree correspond to larger importance. For the final tree, the authors have determined that the relative predictors importance is the following:</p>
-<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/CART%20predictors%20importance.png" /></p>
+<div class="figure">
+<img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/CART%20predictors%20importance.png" />
+
+</div>
 <p>The advantage of trees, when their size remains reasonnable, is that there are <strong>simple and highly interpretable</strong>. Their <strong>computation is quick</strong>. They also lead to <strong>feature selection</strong> which is a great advantage when colinearity among predictors is not too high (otherwise the choice of a predictor over another one is somewhat random)… Colinearity can also dilute the parameter importance as it may involve 2 splits with 2 correlated predictors while 2 splits with a single predictors could be equivalent.</p>
 <p>On the other side, trees have disadvantages:</p>
 <ul>
@@ -70,10 +70,7 @@ where <span class="math inline">\(c_p\)</span> is a complexity parameter.</p>
 </ul>
 <p>There are <strong>several methodologies leading to unbiased trees</strong>. One possible approach called <strong>GUIDE</strong> decouples the choice of the predictor to split on (using a statistical hypoothesis) and the split value. Another approach is called <strong>Conditional inference trees</strong>. This general approach can be used for regression and also for classification. For each candidate split, a statistical test is performed to evaluate the difference between the 2 subgroups and a <strong>p-value</strong> is associated. This allows to compare splits for predictors that are on different scales. In this procedure, the predictors are increasingly penalized by the multiple comparisons when there are a large number of possible split values, reducing the selection bias. These conditional inference trees <strong>do not require a pruning step</strong>: when the number of samples in the nodes decrease, that statistical power decreases and the p-value tend to increase which prevents the tree from becoming too complex and overfit.</p>
 <p>Rather than fixing arbitrarily a p-value (i.e 0.05 for instance) and evaluating the corresponding conditional inference tree, the authors suggest that <strong>a better methodology is to tune the p-value</strong> according to the model performance. The following figure shows that tuned p-value woudl correspond to <span class="math inline">\(1-p = 0.853\)</span> and has a corresponding RMSE of 0.92. The corresponding tree has 32 terminal nodes, which is larger than the CART trees described above.</p>
-<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/p-value%20tuning%20for%20conditional%20inference%20trees.png" />
-</br>
-</br>
-<strong>R code</strong></p>
+<p><img src="/Reading-Notes/2018-12-12-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models_files/p-value%20tuning%20for%20conditional%20inference%20trees.png" /> </br> </br> <strong>R code</strong></p>
 <p>The following code allows to <strong>build a CART tree of depth 2</strong> (using the <code>rpart</code> package) and to <strong>display it nicely</strong> (using the <code>partykit</code> package)</p>
 <pre class="r"><code>library(AppliedPredictiveModeling)
 data(solubility)

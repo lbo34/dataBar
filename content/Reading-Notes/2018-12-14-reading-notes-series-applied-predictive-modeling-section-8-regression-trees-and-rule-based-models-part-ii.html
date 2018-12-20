@@ -15,10 +15,7 @@ featured_image: ''
 
 
 <p>This first series is related to M. Kuhn and K. Johnson book “Applied Predictive Modeling”. The book pdf is available <a href="https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf">here</a>, but if, like me, you prefer to have a paper copy of the book, you can purchase it <a href="https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&amp;qid=1540208647&amp;sr=8-1&amp;keywords=applied+predictive+modeling">here</a>. <strong>This post is dedicated to section 8 on regression trees and rules based models</strong> and as a <strong>part II, it is dealing with regression model trees</strong>.</p>
-<p><img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
-</br>
-</br>
-<strong>Regression model trees</strong></p>
+<p><img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/> </br> </br> <strong>Regression model trees</strong></p>
 <p>This post is the continuation of the summary of chapter 8 on regression trees and rule based models. <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models/">Part I</a> was dedicated to basic trees (including CART trees and conditional inference trees). This part II focuses on regression model trees, <strong>where the terminal nodes do not hold a single value, but a linear model</strong>.</p>
 <p>The approach for regression model trees that is developed in the book is called <strong>“M5”</strong> and intially included in the Weka softare. Compared to basic regression trees:</p>
 <ul>
@@ -27,14 +24,12 @@ featured_image: ''
 <li>the prediction for a given sample is generally not only the prediction given by the linear model in the given terminal node, but instead <strong>a combination of several predictions from models along the tree path</strong>.</li>
 </ul>
 <p>Instead of using SSE criteria for the split, the M5 algorithm seeks to <strong>maximize the reduction of standard deviation after the splits</strong>:</p>
-<p><span class="math display">\[\text{reduction} = \text{SD}(S) - \sum_{i=1}^{P}\frac{n_i}{n}\text{SD}(S_i) \]</span>
-At each split, the algorithm chooses the variable <span class="math inline">\(X_i\)</span> that most increases the reduction of SD and <strong>a linear model is built with this same variable</strong>. For the next iterations, the error associated with the linear model is used instead of <span class="math inline">\(\text{SD}(S_i)\)</span>. At then end of the growing step, the tree contains linear models in each terminal nodes. In each node, <strong>the linear model contains all the predictors involved in the parent splits</strong>.</p>
+<p><span class="math display">\[\text{reduction} = \text{SD}(S) - \sum_{i=1}^{P}\frac{n_i}{n}\text{SD}(S_i) \]</span> At each split, the algorithm chooses the variable <span class="math inline">\(X_i\)</span> that most increases the reduction of SD and <strong>a linear model is built with this same variable</strong>. For the next iterations, the error associated with the linear model is used instead of <span class="math inline">\(\text{SD}(S_i)\)</span>. At then end of the growing step, the tree contains linear models in each terminal nodes. In each node, <strong>the linear model contains all the predictors involved in the parent splits</strong>.</p>
 <p>After the tree is fully grown, each model undergoes a <strong>simplification procedure by dropping some predictors</strong>. For this, an <strong>Adjusted Error Rate</strong> which penalizes the models with more predictors is calculated:</p>
 <p><span class="math display">\[\text{Adjusted Error Rate} = \frac{n^*+p}{n^*-p}\sum_{i=1}^{n^*}|y_i-\hat{y_i}| \]</span> with <span class="math inline">\(n^*\)</span> being the number of observations used to buid the model and <code>p</code> the number of parameters. For each model, <strong>terms are dropped as long as the Adjusted Error Rate decreases</strong>.</p>
 <p>The algorithm then introduces a <strong>“recursive shrinking”</strong> methodology in order to <strong>reduce potential overfitting</strong>: a given prediction for a specific sample combines the predictions from the models along the tree path starting from the terminal node using the following equation:</p>
 <p><span class="math display">\[\hat{y}_{(p)} = \frac{n_{(k)}\hat{y}_{(k)}+c\hat{y}_{(p)}}{n_{(k)}+c} \]</span> where <span class="math inline">\(y_{(p)}\)</span> is the prediction from the parent node, <span class="math inline">\(y_{(k)}\)</span> the prediction from the child node, <span class="math inline">\(n_{(k)}\)</span> the number of samples in the child node (training dataset) and <code>c</code> a constant ususally set to 15. When the new prediction for the parent node is obtained, the recursive shrinking continues up to the top of the tree.</p>
-<p>Once the tree is fully growned, it is <strong>pruned</strong>, starting from the terminal nodes using the adjusted error rate.
-The following R code allows to tune a M5 model tree using the dolubility case study data.</p>
+<p>Once the tree is fully growned, it is <strong>pruned</strong>, starting from the terminal nodes using the adjusted error rate. The following R code allows to tune a M5 model tree using the dolubility case study data.</p>
 <pre class="r"><code>library(AppliedPredictiveModeling)
 data(solubility)
 
@@ -62,13 +57,12 @@ plot(m5Tune)
 m5Tune$finalModel
 plot(m5Tune$finalModel)</code></pre>
 <p>The call <code>plot(m5Tune)</code> produces the following plot:</p>
-<p><img src="/Reading-Notes/2018-12-14-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-ii_files/M5%20model.png" /></p>
+<div class="figure">
+<img src="/Reading-Notes/2018-12-14-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-ii_files/M5%20model.png" />
+
+</div>
 <p>The plot on the left is for Rules based models (following section). The plot on the right is for regression model trees. The plot displays RMSEs for smoothed / unsmoothed and pruned / unpruned models. In this case, if the model is smoothed, pruning does not improve the model performance.</p>
-<p>As it is the case for basic regression trees, the authors point out that <strong>regression model trees tend to favor continuous predictors</strong>. Also, regression trees are affected by predictors colinearity which can make interpretation more difficult. <strong>Smoothing has the effect of minimizing colinearity issues</strong>. In the present case, though, the model performance seems to be ok.
-</br>
-</br>
-</br>
-<strong>Rule-based models</strong></p>
+<p>As it is the case for basic regression trees, the authors point out that <strong>regression model trees tend to favor continuous predictors</strong>. Also, regression trees are affected by predictors colinearity which can make interpretation more difficult. <strong>Smoothing has the effect of minimizing colinearity issues</strong>. In the present case, though, the model performance seems to be ok. </br> </br> </br> <strong>Rule-based models</strong></p>
 <p>As mentioned in <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models/">part I</a>, each node can be defined by a rule written from the if-then statetments. The authors define the <strong>coverage</strong> of a rule as the number of samples it concerns.</p>
 <p>After the pruning step in the regression model tree algorithm (previous section), <strong>further simplification can be performed</strong> by either simplifying rules (removing some conditions in rules) or by removing some rules entirely.</p>
 <p>In some cases, rules can be simplified withouth modifying the outcome. This is the case for instance when there a successive splits on the same predictor using different threshold values.</p>

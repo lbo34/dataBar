@@ -17,15 +17,18 @@ featured_image: ''
 
 
 <p>This first series is related to M. Kuhn and K. Johnson book “Applied Predictive Modeling”. The book pdf is available <a href="https://vuquangnguyen2016.files.wordpress.com/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf">here</a>, but if, like me, you prefer to have a paper copy of the book, you can purchase it <a href="https://www.amazon.com/Applied-Predictive-Modeling-Max-Kuhn/dp/1461468485/ref=sr_1_1?ie=UTF8&amp;qid=1540208647&amp;sr=8-1&amp;keywords=applied+predictive+modeling">here</a>. <strong>This post is dedicated to section 8 on regression trees and rules based models</strong> and as a <strong>part III, it is dealing with ensemble methods: bagging and random forests</strong>.</p>
-<p><img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/>
-</br>
-</br>
-<strong>Bagging</strong></p>
+<p><img src="/post/2018-10-22-reading-notes-series-applied-predictive-modeling-section-3_files/Applied Predictive Modeling Cover.png" alt="Book cover" width="400px"/> </br> </br> <strong>Bagging</strong></p>
 <p>As discussed in <a href="https://www.lbo34.com/reading-notes/reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models/">part I</a>, one of the drawback of regression trees is their <strong>instability</strong> which translates into <strong>high variance</strong>. One way to reduce the variance is to <strong>average the predictions from different trees built from bootstrap samples</strong> taken from the training samples. This general procedure is known as <strong>b</strong>oostrap <strong>agg</strong>regation or <strong>bagging</strong>. It works better for methods that have a high variance (ex: regression trees) vs. methods that have a lower variance such as MARS… However, the authors point-out (see figure below) that on the solubility dataset, bagging MARS models does significantly reduce the RMSE, which is <strong>NOT a typical result</strong>… a more typical result is the behavior observed for the concrete dataset where reduction of RMSE for Tree models is larger when bagging than it is for more stable methods such as MARS.</p>
-<p><img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/RMSE%20reduction%20through%20bagging.png" /></p>
+<div class="figure">
+<img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/RMSE%20reduction%20through%20bagging.png" />
+
+</div>
 <p>In addition to variance reduction, bagging also provides the advantage of producing an <strong>estimate of model performance</strong> (by estimating the error on the out-of-bag samples) similar to cross-validation. This estimate is generally referres as <strong>out-of-bag estimate (OOB)</strong>.</p>
 <p>In practice, when bagging models, the only parameter is the <strong>number of bootstrap samples to aggregate <code>m</code></strong>. Generally, there is an exponential decrease in the performance and, as shown in the figure below, a large part of the improvement is obtained with a <strong>small number of trees (<code>m&lt;10</code>)</strong>.</p>
-<p><img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/RMSE%20and%20number%20of%20boostrap%20samples.png" /></p>
+<div class="figure">
+<img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/RMSE%20and%20number%20of%20boostrap%20samples.png" />
+
+</div>
 <p>Bagging has drawbacks, one of them is <strong>computation time and memory requirements</strong> which increase as <code>m</code> increases. However, as boostrap samples are independant from each other, bagging can be <strong>easily parallelized</strong>. Also. bagged models are <strong>more difficult to interpret</strong>: there are no more clear rules that can be used. However, variance importance can be assessed.</p>
 <p>The following code corresponds to a bagging with <code>m=25</code>. In order to speed the process, the calculation is parallelized using the <code>doMC</code> package.</p>
 <pre class="r"><code>library(AppliedPredictiveModeling)
@@ -79,21 +82,19 @@ treebagTune</code></pre>
 ##   0.9103918  0.8044947  0.6879743</code></pre>
 <pre class="r"><code>#Variable importance
 plot(varImp(treebagTune), top=25)</code></pre>
-<p><img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/figure-html/unnamed-chunk-1-1.png" width="672" />
-</br>
-</br>
-</br>
-<strong>Random Forests</strong></p>
+<p><img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/figure-html/unnamed-chunk-1-1.png" width="672" /> </br> </br> </br> <strong>Random Forests</strong></p>
 <p>Although it reduces variance, <strong>bagging has somewhat limited effects</strong> as trees all originate from the <strong>same sample base</strong>… that makes that, in spite of instability, trees originating from bagging are <strong>correlated</strong> and this prevents bagging from further reducing variance.</p>
-<p>One way to improve this is to reduce tree correlations by <strong>adding randomness</strong> in the trees contruction process.
-The algorithm used for random forests is illustrated below. It starts in the same way as bagging by the selection of a bootstrap sample. However, the difference happens in the tree building phase: for <strong>each split</strong>, the algorithm does not consider all the <code>P</code> predictors but <strong>a smaller subset of size <code>k</code> taken randomly</strong>.</p>
-<p><img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/Random%20Forests%20Algorithm.png" /></p>
+<p>One way to improve this is to reduce tree correlations by <strong>adding randomness</strong> in the trees contruction process. The algorithm used for random forests is illustrated below. It starts in the same way as bagging by the selection of a bootstrap sample. However, the difference happens in the tree building phase: for <strong>each split</strong>, the algorithm does not consider all the <code>P</code> predictors but <strong>a smaller subset of size <code>k</code> taken randomly</strong>.</p>
+<div class="figure">
+<img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/Random%20Forests%20Algorithm.png" />
+
+</div>
 <p>In practice, there a <strong>2 parameters</strong> in random forests:</p>
 <ul>
 <li>The <strong>size of the predictors subset <code>k</code></strong> is often referred as <span class="math inline">\(m_{try}\)</span>. A suggested value is <span class="math inline">\(P/3\)</span>. However, this parameter can be tuned. As it is computationnaly intensive to do so, the authors suggest 5 values of k evenly spaced between <code>2</code> and <code>P</code>.</li>
 <li>The <strong>number of trees <code>m</code></strong> to average. As random forests are <strong>protected from overfitting</strong>, there is no harm in taking large numbers of trees. However, this is limited by computation time. The authors suggest to start with 1000 trees and to increase the number if performance continues increasing with the amount of trees.</li>
 </ul>
-<p>Random forests can be done with <strong>CART trees</strong> or with <strong>conditional inference trees</strong>. The following code trains a CART based random forest using <strong>cross validation</strong>. Conditional inference trees can be used by specifying <code>method = "cforest"</code> instead of <code>method = "rf"</code> in the <code>train()</code> function. In that case, the <code>ntree</code> argument is replaced by <code>controls = cforest_unbiased(ntree = 1000)</code>.</p>
+<p>Random forests can be done with <strong>CART trees</strong> or with <strong>conditional inference trees</strong>. The following code trains a CART based random forest using <strong>cross validation</strong>. Conditional inference trees can be used by specifying <code>method = &quot;cforest&quot;</code> instead of <code>method = &quot;rf&quot;</code> in the <code>train()</code> function. In that case, the <code>ntree</code> argument is replaced by <code>controls = cforest_unbiased(ntree = 1000)</code>.</p>
 <p>Training can also be done using <strong>OOB estimates</strong>. This <strong>reduces drastically computation time</strong>.</p>
 <pre class="r"><code>mtryGrid &lt;- data.frame(mtry = floor(seq(10, ncol(solTrainXtrans), length = 10)))
 ### Tune the model using cross-validation
@@ -126,4 +127,7 @@ plot(rfTuneOOB)
 plot(varImp(rfTune), top = 25)
 plot(varImp(rfTuneOOB), top = 25)</code></pre>
 <p>The following figure compares the different random forest “flavors”. In the case study dataset, the CART based random forest provides the best performance and in this case, the OOB RMSE estimate and cross-validation estimate are almost identical.</p>
-<p><img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/RF%20RMSE%20CV%20and%20OOB.png" /></p>
+<div class="figure">
+<img src="/Reading-Notes/2018-12-19-reading-notes-series-applied-predictive-modeling-section-8-regression-trees-and-rule-based-models-part-iii_files/RF%20RMSE%20CV%20and%20OOB.png" />
+
+</div>

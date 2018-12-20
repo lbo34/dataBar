@@ -25,8 +25,7 @@ featured_image: ''
 <li><strong>Partial Least Square (PLS)</strong> regression and <strong>Principal Components Regression (PCR)</strong>;</li>
 <li>Penalized models such as <strong>ridge regression</strong>, <strong>lasso</strong> and <strong>elastic net</strong>.</li>
 </ul>
-<p>This post (section 6, part I) focusses on Ordinary Linear Regression.
-Part II focuses on the other models.</p>
+<p>This post (section 6, part I) focusses on Ordinary Linear Regression. Part II focuses on the other models.</p>
 <p>The difference between these regression models is first explained with the bias-variance tradeoff (see chapter <a href="https://www.lbo34.com/post/reading-notes-series-applied-predictive-modeling-section-5-measuring-performance-in-regression-models/">5</a>). <strong>Ordinary Linear regression leads to models that have minimum bias (but can be high variance) while the penalized models have a higher bias but can have a lower variance</strong>. In some cases, in spite of a higher bias, because of a lower variance, these penalized model can have a lower RMSE.</p>
 <p>One key advantage of linear models that can be written in the form of the above equation is that they are <strong>easily interpretable</strong>. Another one is that it is easy to compute statistics such as the <strong>standard error of the coefficients</strong>, as long as some assumptions are met about the distribution of the models residuals. Therefore, these models are useful for <strong>inference</strong>.</p>
 <p>However, a general drawback of these models is their <strong>linear nature</strong> which means that the solution is in the form of an hyperplane. However models can be augmented with <strong>quadratic</strong>, <strong>cubic</strong> or <strong>interaction terms</strong>. Non linear behaviors could be better modeled with other types of models.</p>
@@ -37,8 +36,7 @@ Part II focuses on the other models.</p>
 <li><strong>count descriptors</strong> (such as the number of bonds). There are 16 of them;</li>
 <li><strong>binary decriptors</strong> (that indicate the presence or absence of a specific feature). There are 208 of them.</li>
 </ul>
-<p>The relationship between the solubility (measured on a <span class="math inline">\(log_{10}\)</span> scale) and the the molecular mass is given in the following scatterplot.
-<img src="/Reading-Notes/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>The relationship between the solubility (measured on a <span class="math inline">\(log_{10}\)</span> scale) and the the molecular mass is given in the following scatterplot. <img src="/Reading-Notes/2018-10-29-reading-notes-series-applied-predictive-modeling-section-6-linear-regression-and-its-cousins_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
 <p>Concerning the dataset, the authors note that:</p>
 <ul>
 <li>Although, overall, the descriptors are not strongly correlated, some of them have correlations greater than 0.90. <strong>This redundancy in information is likely to have some impact on the modeling</strong>.</li>
